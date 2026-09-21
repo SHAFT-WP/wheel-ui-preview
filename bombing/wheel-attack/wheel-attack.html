@@ -1,0 +1,1994 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BE Wheel Attack REV. 0.4 · OFFICIAL · R_20260825</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: light-dark(#ffffff, #10151c);
+    --panel: light-dark(#ffffff, #18212b);
+    --field: light-dark(#f5f7fa, #202b37);
+    --text: light-dark(#14202c, #eef5fb);
+    --muted: light-dark(#687787, #9dabb9);
+    --line: light-dark(#dfe6ee, #314151);
+    --blue: light-dark(#176dac, #72baf0);
+    --blue-soft: light-dark(#e7f3fc, #15354e);
+    --green: light-dark(#087b4c, #65d49d);
+    --amber: light-dark(#a35d00, #ffbd62);
+    --red: light-dark(#bd3333, #ff8585);
+    --red-soft: light-dark(#fdecec, #3e2225);
+    --green-soft: light-dark(#e9f7ef, #12392a);
+    --amber-soft: light-dark(#fff4df, #3b2a14);
+    --radius: 14px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+    color: var(--text);
+    background: var(--bg);
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); }
+  input, select { font: inherit; }
+  .app {
+    width: min(1240px, calc(100% - 24px));
+    margin: 0 auto;
+    padding: 18px 0 46px;
+  }
+  .topbar {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .topbar h1 { margin: 0; font-size: clamp(21px, 2.5vw, 30px); letter-spacing: -0.03em; }
+  .title-stack { display: grid; gap: 5px; }
+  .subtitle { margin: 0; color: var(--muted); font-size: 12px; font-weight: 700; }
+  .rev-stack { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
+  .rev {
+    padding: 6px 10px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--blue);
+    background: var(--blue-soft);
+    font-size: 12px;
+    font-weight: 800;
+  }
+  h2 { margin: 0; font-size: 22px; letter-spacing: -0.02em; }
+
+  .section {
+    padding: 18px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .mode, .status {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+  .mode { color: var(--blue); background: var(--blue-soft); }
+  .safe { color: var(--green); background: var(--green-soft); }
+  .caution { color: var(--amber); background: var(--amber-soft); }
+  .invalid { color: var(--red); background: var(--red-soft); }
+
+  .input-groups { display: grid; gap: 12px; }
+  .input-panel {
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--panel);
+  }
+  .input-panel summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 13px 15px;
+    cursor: pointer;
+    list-style: none;
+    color: var(--text);
+    background: var(--field);
+    font-size: 15px;
+    font-weight: 850;
+    user-select: none;
+  }
+  .input-panel summary::-webkit-details-marker { display: none; }
+  .input-panel summary::after {
+    content: "＋";
+    color: var(--blue);
+    font-size: 18px;
+    line-height: 1;
+  }
+  .input-panel[open] summary { border-bottom: 1px solid var(--line); }
+  .input-panel[open] summary::after { content: "−"; }
+  .input-panel-body { padding: 14px; }
+  .input-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(125px, 1fr));
+    gap: 13px;
+  }
+  .input-grid.profile { grid-template-columns: repeat(6, minmax(120px, 1fr)); }
+  .field {
+    display: grid;
+    align-content: start;
+    gap: 7px;
+    min-width: 0;
+  }
+  .field > span:first-child {
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 800;
+  }
+  input, select, .readout {
+    width: 100%;
+    min-height: 54px;
+    padding: 11px 13px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    outline: none;
+    color: var(--text);
+    background: var(--field);
+    font-size: 19px;
+    font-variant-numeric: tabular-nums;
+  }
+  .readout {
+    display: flex;
+    align-items: center;
+    border-style: dashed;
+    color: var(--blue);
+    font-weight: 850;
+  }
+  input:focus, select:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 16%, transparent);
+  }
+  .compound {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 102px;
+  }
+  .compound input { border-radius: 12px 0 0 12px; }
+  .compound select { border-left: 0; border-radius: 0 12px 12px 0; }
+  .unit { min-height: 16px; color: var(--muted); font-size: 12px; }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 12px 14px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { color: var(--muted); font-size: 12px; text-align: left; }
+  .result-table { table-layout: fixed; }
+  .result-table col.result-label-col { width: 35%; }
+  .result-table col.result-colon-col { width: 24px; }
+  .result-table td { font-weight: 400; }
+  .result-label { color: var(--text); }
+  .result-colon { padding-inline: 0; text-align: center; }
+  .result-value { text-align: left; font-variant-numeric: tabular-nums; white-space: normal; }
+  .result-profile-title td {
+    color: light-dark(#000000, #ffffff);
+    font-size: 16px;
+    font-weight: 400;
+  }
+  .result-group td {
+    color: var(--text);
+    background: var(--field);
+    font-weight: 850;
+  }
+
+  .error {
+    display: none;
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 11px;
+    color: var(--red);
+    background: var(--red-soft);
+  }
+  .error.show { display: block; }
+
+  .geometry {
+    padding-top: 22px;
+  }
+  .diagram-panel {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    min-width: 0;
+  }
+  .z-canvas { width: min(100%, 820px); margin: 0 auto; }
+  .diagram-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .diagram-title {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 850;
+    letter-spacing: .01em;
+  }
+  .capture-button {
+    min-height: 30px;
+    padding: 5px 10px;
+    border: 1px solid color-mix(in srgb, var(--blue) 45%, var(--line));
+    border-radius: 8px;
+    color: var(--blue);
+    background: var(--blue-soft);
+    font: inherit;
+    font-size: 11px;
+    font-weight: 850;
+    cursor: pointer;
+  }
+  .capture-button:hover { filter: brightness(.97); }
+  .capture-button:focus-visible { outline: 3px solid color-mix(in srgb, var(--blue) 25%, transparent); }
+  .geometry-box {
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: light-dark(#fbfcfd, #111820);
+  }
+  .z-canvas .geometry-box { background: #ffffff; border-color: #dfe6ee; }
+  #z-svg, #profile-svg { display: block; width: 100%; }
+  #z-svg { aspect-ratio: 650 / 610; }
+  #profile-svg { aspect-ratio: 960 / 535; }
+  #z-svg text, #profile-svg text { font-family: inherit; }
+  #z-svg text { fill: #111111 !important; }
+  .geometry-foot {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 9px;
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .legend { display: flex; flex-wrap: wrap; gap: 10px 14px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { display: inline-block; width: 18px; height: 3px; border-radius: 2px; }
+  .wheel-layout {
+    display: grid;
+    grid-template-columns: minmax(280px, .82fr) minmax(0, 1.55fr);
+    gap: 16px;
+    align-items: start;
+  }
+  .wheel-side { display: grid; gap: 12px; }
+  .wheel-card {
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--panel);
+  }
+  .wheel-card-head {
+    padding: 12px 14px;
+    color: var(--text);
+    background: var(--field);
+    font-size: 13px;
+    font-weight: 850;
+  }
+  .wheel-card-body { padding: 13px; }
+  .wheel-inputs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .metric-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--line); }
+  .metric { min-width: 0; padding: 11px 12px; background: var(--panel); }
+  .metric span { display: block; color: var(--muted); font-size: 11px; font-weight: 800; }
+  .metric strong { display: block; margin-top: 5px; color: var(--text); font-size: 16px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .metric.primary strong { color: var(--blue); }
+  .wheel-canvas { padding: 8px; }
+  #wheel-svg { display: block; width: 100%; aspect-ratio: 900 / 620; }
+  #wheel-svg text { font-family: inherit; }
+  .formula-note { margin-top: 12px; }
+  .formula-note summary { cursor: pointer; color: var(--blue); font-size: 12px; font-weight: 850; }
+  .formula-note p { margin: 8px 0 0; color: var(--muted); font-size: 12px; line-height: 1.65; }
+  .sequence-line { color: var(--green); font-weight: 850; }
+
+  @media (max-width: 1040px) {
+    .input-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .input-grid.profile { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
+  @media (max-width: 760px) {
+    .geometry-foot { flex-direction: column; }
+    .wheel-layout { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 560px) {
+    .app { width: min(100% - 16px, 1240px); }
+    .topbar { align-items: flex-start; flex-direction: column; }
+    .rev-stack { justify-content: flex-start; }
+    .input-grid, .input-grid.profile {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 9px;
+    }
+    .compound { grid-template-columns: minmax(0, 1fr) 68px; }
+    input, select, .readout {
+      min-height: 46px;
+      padding: 8px 9px;
+      border-radius: 9px;
+      font-size: 16px;
+    }
+    .compound input { border-radius: 9px 0 0 9px; }
+    .compound select { border-radius: 0 9px 9px 0; padding-inline: 5px; font-size: 14px; }
+    .field { gap: 4px; }
+    .field > span:first-child { font-size: 11px; }
+    .unit { font-size: 10px; }
+    .input-panel-body { padding: 10px; }
+    .input-panel summary { padding: 11px 12px; font-size: 13px; }
+    th, td { padding: 10px 9px; }
+  }
+</style>
+</head>
+<body>
+<main class="app" id="calculator">
+  <header class="topbar">
+    <div class="title-stack">
+      <h1>BE: WHEEL ATTACK</h1>
+      <p class="subtitle">111SQ Target-Centered Right Wheel · BE Common Rev0.7 · Bomb Profile Editor 연동</p>
+    </div>
+    <div class="rev-stack">
+      <span class="rev">REV. 0.4 · OFFICIAL · R_20260825</span>
+      <span class="rev">BOMB PROFILE REV. 1.7 · OFFICIAL</span>
+    </div>
+  </header>
+
+  <section class="section" aria-labelledby="input-title">
+    <div class="section-head">
+      <h2 id="input-title">Input</h2>
+      <span class="mode" id="solve-mode">Initial 고도 기준</span>
+    </div>
+
+    <div class="input-groups">
+      <details class="input-panel" open>
+        <summary>Bomb Information · MINALT / RNLT 설정</summary>
+        <div class="input-panel-body">
+          <div class="input-grid">
+            <label class="field">
+              <span>BOMB</span>
+              <select data-key="weapon"></select>
+              <span class="unit">LD / AIR (HD) · 폭탄별 기본 안전고도 데이터</span>
+            </label>
+            <label class="field">
+              <span>Target 고도</span>
+              <input data-key="targetElevation" type="text" inputmode="decimal" value="31">
+              <span class="unit">ft MSL</span>
+            </label>
+            <label class="field">
+              <span>Release 속도</span>
+              <input data-key="releaseSpeed" type="text" inputmode="decimal" value="450">
+              <span class="unit">KCAS</span>
+            </label>
+            <label class="field">
+              <span>Escape G</span>
+              <input data-key="escapeG" type="text" inputmode="decimal" value="4">
+              <span class="unit">default 4G</span>
+            </label>
+            <label class="field">
+              <span>RNLT 속도 마진</span>
+              <input data-key="rnltSpeedMargin" type="text" inputmode="decimal" value="50">
+              <span class="unit">Release 속도 + KCAS</span>
+            </label>
+            <label class="field">
+              <span>Recovery 조작 지연시간</span>
+              <input data-key="maneuverTime" type="text" inputmode="decimal" value="2">
+              <span class="unit">sec · release 후 pull 시작까지</span>
+            </label>
+            <label class="field">
+              <span>Dive Angle</span>
+              <input data-key="diveAngle" type="text" inputmode="decimal" value="45">
+              <span class="unit">degree down · Dive Profile과 동기화</span>
+            </label>
+            <label class="field">
+              <span>Wind Direction</span>
+              <input data-key="windDirection" type="text" inputmode="decimal" value="0">
+              <span class="unit">degree FROM · 공격축 기준 0° = 정면바람</span>
+            </label>
+            <label class="field">
+              <span>Wind Speed</span>
+              <input data-key="windSpeed" type="text" inputmode="decimal" value="0">
+              <span class="unit">m/s</span>
+            </label>
+            <div class="field">
+              <span>MINALT</span>
+              <output class="readout" id="i-minalt-reference">-</output>
+              <span class="unit">Fragment Maximum Altitude + 20% · ft MSL</span>
+            </div>
+            <div class="field">
+              <span>RNLT</span>
+              <output class="readout" id="i-rnlt-bomb-reference">-</output>
+              <span class="unit">Release No Lower Than · ft MSL</span>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="input-panel" open>
+        <summary>Dive Profile Information</summary>
+        <div class="input-panel-body">
+          <div class="input-grid profile">
+            <label class="field">
+              <span>Initial 속도</span>
+              <span class="compound">
+                <input data-key="initialSpeed" type="text" inputmode="decimal" value="350">
+                <select data-key="initialUnit" aria-label="Initial speed unit">
+                  <option value="MACH">Mach</option>
+                  <option value="CAS" selected>KCAS</option>
+                </select>
+              </span>
+              <span class="unit">Mach 또는 KCAS</span>
+            </label>
+            <label class="field">
+              <span>Initial 고도</span>
+              <input data-key="initialAltitude" type="text" inputmode="decimal" value="16000">
+              <span class="unit">ft MSL</span>
+            </label>
+            <label class="field">
+              <span>Dive Angle</span>
+              <input data-key="diveAngle" type="text" inputmode="decimal" value="45">
+              <span class="unit">degree down · Bomb Information과 동기화</span>
+            </label>
+            <label class="field">
+              <span>Tracking Time</span>
+              <input data-key="trackingTime" type="text" inputmode="decimal" value="18.25">
+              <span class="unit">sec</span>
+            </label>
+            <label class="field">
+              <span>Release 고도</span>
+              <input data-key="releaseAltitude" type="text" inputmode="decimal" value="6800">
+              <span class="unit">ft MSL · RNLT 미만 입력은 RNLT 기준 적용</span>
+            </label>
+            <div class="field">
+              <span>RNLT 참고 고도</span>
+              <output class="readout" id="i-rnlt-reference">-</output>
+              <span class="unit">Release No Lower Than · ft MSL</span>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="input-panel" open>
+        <summary>Roll-in Information</summary>
+        <div class="input-panel-body">
+          <div class="input-grid">
+            <label class="field">
+              <span>Angle-Off (Heading) (AUTO)</span>
+              <input data-key="rollHeading" type="text" inputmode="decimal" value="90" readonly aria-readonly="true">
+              <span class="unit">degree · Wheel 접선조건에서 자동 산출</span>
+            </label>
+            <label class="field">
+              <span>Roll-in Bank Angle</span>
+              <input data-key="rollBank" type="text" inputmode="decimal" value="113">
+              <span class="unit">degree · default round(90° + Dive Angle / 2)</span>
+            </label>
+            <label class="field">
+              <span>Roll-in Bank Gs</span>
+              <input data-key="rollG" type="text" inputmode="decimal" value="4">
+              <span class="unit">Cockpit G · default 4G</span>
+            </label>
+            <div class="field">
+              <span>Roll-in Radius / Roll-in Time</span>
+              <output class="readout" id="i-roll-radius-time">-</output>
+              <span class="unit">중간 결과 · ground-projected radius / sec</span>
+            </div>
+            <div class="field"><span>Roll-in Altitude Loss</span><output class="readout" id="i-roll-loss">-</output><span class="unit">ft · Initial 고도에 포함</span></div>
+            <div class="field"><span>Roll-in Ground Component</span><output class="readout" id="i-roll-ground">-</output><span class="unit">NM · Roll-in Range 계산에 포함</span></div>
+            <div class="field"><span>Lead Angle</span><output class="readout" id="i-roll-lead">-</output><span class="unit">OFFSET 기준 선회 개시각</span></div>
+          </div>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="wheel-title">
+    <div class="section-head">
+      <h2 id="wheel-title">Wheel Attack</h2>
+      <span class="status safe" id="wheel-status">RIGHT WHEEL · VALID</span>
+    </div>
+    <div class="wheel-layout">
+      <div class="wheel-side">
+        <div class="wheel-card">
+          <div class="wheel-card-head">Pattern Parameter</div>
+          <div class="wheel-card-body">
+            <div class="wheel-inputs">
+              <label class="field">
+                <span>Attack Heading</span>
+                <input data-wheel-key="attackHeading" type="text" inputmode="decimal" value="90">
+                <span class="unit">degree magnetic · 000–359</span>
+              </label>
+              <label class="field">
+                <span>Aircraft Count</span>
+                <input data-wheel-key="aircraftCount" type="text" inputmode="numeric" value="4">
+                <span class="unit">2–8 aircraft</span>
+              </label>
+              <div class="field">
+                <span>Pattern Direction</span>
+                <output class="readout">RIGHT</output>
+                <span class="unit">Target inside right bank · 111SQ 기준</span>
+              </div>
+              <div class="field">
+                <span>Attack Sequence</span>
+                <output class="readout sequence-line" id="w-sequence">1 → 4 → 3 → 2</output>
+                <span class="unit">4-ship 기준 · N명은 역순 순환</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="wheel-card">
+          <div class="wheel-card-head">Calculated Wheel</div>
+          <div class="metric-grid" aria-live="polite">
+            <div class="metric primary"><span>Wheel Range (ARC) · Horizontal</span><strong id="w-range">-</strong></div>
+            <div class="metric primary"><span>Wheel Range (ARC) · Slant</span><strong id="w-slant">-</strong></div>
+            <div class="metric"><span>Wheel Bank / G</span><strong id="w-bank-g">-</strong></div>
+            <div class="metric"><span>Wheel Turn Rate</span><strong id="w-rate">-</strong></div>
+            <div class="metric"><span>Angle-Off (Heading)</span><strong id="w-heading-change">-</strong></div>
+            <div class="metric"><span>Intercept Angle</span><strong id="w-intercept">-</strong></div>
+            <div class="metric"><span>Roll-in Start Heading</span><strong id="w-start-heading">-</strong></div>
+            <div class="metric"><span>Roll-in Start Radial</span><strong id="w-start-radial">-</strong></div>
+            <div class="metric"><span>Orbit Time · 360°</span><strong id="w-orbit-time">-</strong></div>
+            <div class="metric"><span>N+1 Attack Interval</span><strong id="w-interval">-</strong></div>
+            <div class="metric"><span>Aircraft Arc Spacing</span><strong id="w-spacing">-</strong></div>
+            <div class="metric"><span>Tangent Closure Error</span><strong id="w-residual">-</strong></div>
+          </div>
+          <div class="wheel-card-body">
+            <details class="formula-note">
+              <summary>REV.0.2 Geometry Definition</summary>
+              <p>Bomb Profile의 Roll-in 궤적과 MAP을 사용한다. Roll-in 시작점에서 Target이 정확히 우현 90°가 되도록 <b>x<sub>roll</sub> + MAP·cos ψ = 0</b>을 풀어 ψ를 산출한다. Wheel Range는 <b>y<sub>roll</sub> + MAP·sin ψ</b>이다. 따라서 기존 자료에서 서로 충돌하던 ARC/RIP ±0.5 NM 고정 보정은 사용하지 않는다. 운용 흐름은 <b>Target Sorting → Arcing → 1st Attack Run → N+1 Attack Run</b>으로 유지한다.</p>
+            </details>
+          </div>
+        </div>
+      </div>
+
+      <div class="wheel-card">
+        <div class="wheel-card-head">Top View · Target-Centered Wheel</div>
+        <div class="wheel-canvas">
+          <svg id="wheel-svg" viewBox="0 0 900 620" role="img" aria-labelledby="wheel-svg-title wheel-svg-desc">
+            <title id="wheel-svg-title">111SQ Wheel Attack top view</title>
+            <desc id="wheel-svg-desc">Target-centered right orbit, aircraft spacing, roll-in start, slice turn, attack heading, safe escape and rejoin concept.</desc>
+            <defs>
+              <marker id="wheel-arrow-blue" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+                <path d="M0,0 L9,4.5 L0,9 Z" fill="context-stroke"></path>
+              </marker>
+              <marker id="wheel-arrow-green" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+                <path d="M0,0 L9,4.5 L0,9 Z" fill="context-stroke"></path>
+              </marker>
+            </defs>
+            <g id="wheel-root"></g>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="z-section-title">
+    <div class="section-head">
+      <h2 id="z-section-title">CCIP Z-Diagram</h2>
+      <button class="capture-button" id="capture-z" type="button">PNG 저장</button>
+    </div>
+    <div class="diagram-panel z-canvas">
+      <div class="geometry-box">
+        <svg id="z-svg" viewBox="0 0 650 610" role="img" aria-labelledby="z-title z-desc">
+          <title id="z-title">CCIP Z-Diagram</title>
+          <desc id="z-desc">Speed, altitude, ground and slant range, planned release, RNLT, MINALT, aim-off angle, tracking time and in-impact time.</desc>
+          <g id="z-root"></g>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="result-title">
+    <div class="section-head">
+      <h2 id="result-title">Profile Result</h2>
+      <span class="status" id="result-status">-</span>
+    </div>
+    <div class="table-wrap" aria-live="polite">
+      <table class="result-table" aria-label="Profile result table">
+        <colgroup>
+          <col class="result-label-col">
+          <col class="result-colon-col">
+          <col>
+        </colgroup>
+        <tbody>
+          <tr class="result-profile-title"><td class="result-label">TITLE</td><td class="result-colon">:</td><td class="result-value" id="r-profile-title">-</td></tr>
+
+          <tr class="result-group"><td colspan="3">[Bomb 정보]</td></tr>
+          <tr><td class="result-label">Bomb</td><td class="result-colon">:</td><td class="result-value" id="r-bomb">-</td></tr>
+          <tr><td class="result-label">Drag Index</td><td class="result-colon">:</td><td class="result-value" id="r-drag-index">-</td></tr>
+          <tr><td class="result-label">Ballistic Model</td><td class="result-colon">:</td><td class="result-value" id="r-ballistic-model">-</td></tr>
+          <tr><td class="result-label">비산거리/비산높이/비산시간</td><td class="result-colon">:</td><td class="result-value" id="r-fragment-data">-</td></tr>
+          <tr><td class="result-label">RNLT</td><td class="result-colon">:</td><td class="result-value" id="r-bomb-rnlt">-</td></tr>
+          <tr><td class="result-label">MINALT</td><td class="result-colon">:</td><td class="result-value" id="r-bomb-minalt">-</td></tr>
+          <tr><td class="result-label">* Safety Rule</td><td class="result-colon">:</td><td class="result-value" id="r-safety-rule">-</td></tr>
+
+          <tr class="result-group"><td colspan="3">[Geometry]</td></tr>
+          <tr><td class="result-label">Target 고도 (MSL)</td><td class="result-colon">:</td><td class="result-value" id="r-target">-</td></tr>
+          <tr><td class="result-label">Initial 고도 (MSL)</td><td class="result-colon">:</td><td class="result-value" id="r-initial-altitude">-</td></tr>
+          <tr><td class="result-label">Initial 속도 (CAS/TAS/Mach)</td><td class="result-colon">:</td><td class="result-value" id="r-initial-speed">-</td></tr>
+          <tr><td class="result-label">Roll-in Range (Horizontal/Slant Range)</td><td class="result-colon">:</td><td class="result-value" id="r-rollin-range">-</td></tr>
+          <tr><td class="result-label">Ground Range</td><td class="result-colon">:</td><td class="result-value" id="r-ground-range">-</td></tr>
+          <tr><td class="result-label">Aim-Off Distance (AOD)</td><td class="result-colon">:</td><td class="result-value" id="r-aod">-</td></tr>
+          <tr><td class="result-label">Roll-in Radius</td><td class="result-colon">:</td><td class="result-value" id="r-roll-radius">-</td></tr>
+
+          <tr class="result-group"><td colspan="3">[Bombing Profile]</td></tr>
+          <tr><td class="result-label">Angle-Off (Heading)</td><td class="result-colon">:</td><td class="result-value" id="r-roll-turn">-</td></tr>
+          <tr><td class="result-label">Dive Angle</td><td class="result-colon">:</td><td class="result-value" id="r-dive">-</td></tr>
+          <tr><td class="result-label">Aim-Off Range (AOR)</td><td class="result-colon">:</td><td class="result-value" id="r-aor">-</td></tr>
+          <tr><td class="result-label">Roll-in Bank/Gs</td><td class="result-colon">:</td><td class="result-value" id="r-roll-bank-g">-</td></tr>
+          <tr><td class="result-label">Track Point 고도 (Roll-out 고도)</td><td class="result-colon">:</td><td class="result-value" id="r-track-altitude">-</td></tr>
+          <tr><td class="result-label">Tracking Time</td><td class="result-colon">:</td><td class="result-value" id="r-tracking-time">-</td></tr>
+          <tr><td class="result-label">Release 고도</td><td class="result-colon">:</td><td class="result-value" id="r-release-altitude">-</td></tr>
+          <tr><td class="result-label">RNLT</td><td class="result-colon">:</td><td class="result-value" id="r-profile-rnlt">-</td></tr>
+          <tr><td class="result-label">MINALT</td><td class="result-colon">:</td><td class="result-value" id="r-profile-minalt">-</td></tr>
+
+          <tr class="result-group"><td colspan="3">[TIME]</td></tr>
+          <tr><td class="result-label">BOMB TOF</td><td class="result-colon">:</td><td class="result-value" id="r-bomb-tof">-</td></tr>
+          <tr><td class="result-label">Roll-in to Impact Time</td><td class="result-colon">:</td><td class="result-value" id="r-rollin-impact-time">-</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="error" id="error" role="alert"></div>
+  </section>
+
+  <section class="geometry" aria-labelledby="geometry-title">
+    <div class="section-head">
+      <h2 id="geometry-title">Dive Profile Geometry</h2>
+    </div>
+    <div class="geometry-box">
+      <svg id="profile-svg" viewBox="0 0 960 535" role="img" aria-labelledby="geometry-title profile-desc">
+        <desc id="profile-desc">Roll-in entry, Track Point, Release, Target, ground range, slant range, aim-off angle, AOR, AOD와 bomb trajectory를 표시한 Dive Bomb Profile.</desc>
+        <defs>
+          <marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto-start-reverse">
+            <path d="M0,0 L8,4 L0,8 Z" fill="context-stroke"></path>
+          </marker>
+          <marker id="arrow-green" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto-start-reverse">
+            <path d="M0,0 L8,4 L0,8 Z" fill="context-stroke"></path>
+          </marker>
+          <marker id="arrow-amber" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto-start-reverse">
+            <path d="M0,0 L8,4 L0,8 Z" fill="context-stroke"></path>
+          </marker>
+        </defs>
+        <g opacity=".55" stroke="var(--line)" stroke-width="1">
+          <line x1="70" x2="900" y1="100" y2="100"></line>
+          <line x1="70" x2="900" y1="190" y2="190"></line>
+          <line x1="70" x2="900" y1="280" y2="280"></line>
+        </g>
+        <line x1="60" x2="910" y1="370" y2="370" stroke="var(--text)" stroke-width="2"></line>
+        <line id="p-flight" stroke="var(--blue)" stroke-width="2.5"></line>
+        <path id="p-roll" fill="none" stroke="var(--blue)" stroke-width="3.5" stroke-linecap="round"></path>
+        <line id="p-los" stroke="var(--amber)" stroke-width="2" stroke-dasharray="8 6"></line>
+        <path id="p-bomb" fill="none" stroke="var(--green)" stroke-width="3.5" stroke-linecap="round"></path>
+        <line id="p-map-ground" stroke="var(--blue)" stroke-width="1.7" marker-start="url(#arrow-blue)" marker-end="url(#arrow-blue)"></line>
+        <line id="p-aor" stroke="var(--amber)" stroke-width="1.7" marker-start="url(#arrow-amber)" marker-end="url(#arrow-amber)"></line>
+        <line id="p-rollin-range" stroke="var(--blue)" stroke-width="1.7" marker-start="url(#arrow-blue)" marker-end="url(#arrow-blue)"></line>
+        <line id="p-aod" stroke="var(--green)" stroke-width="1.7" marker-start="url(#arrow-green)" marker-end="url(#arrow-green)"></line>
+        <line id="p-initial-alt" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="4 4"></line>
+        <line id="p-track-alt" stroke="var(--blue)" stroke-width="1.4" stroke-dasharray="4 4"></line>
+        <line id="p-release-alt" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="4 4"></line>
+        <circle id="p-initial-point" r="6" fill="var(--blue)"></circle>
+        <circle id="p-rollout-point" r="5" fill="var(--blue-soft)" stroke="var(--blue)" stroke-width="2"></circle>
+        <circle id="p-release-point" r="6" fill="var(--amber)"></circle>
+        <circle id="p-target-point" r="7" fill="var(--green)"></circle>
+        <circle id="p-fpm-point" r="5" fill="none" stroke="var(--blue)" stroke-width="2"></circle>
+        <g id="p-labels"></g>
+      </svg>
+    </div>
+    <div class="geometry-foot">
+      <span class="legend">
+        <span><i style="background:var(--blue)"></i>Flight path / Ground Range</span>
+        <span><i style="background:var(--amber)"></i>Track Point LOS / Slant Range</span>
+        <span><i style="background:var(--amber)"></i>Aim-Off Range (AOR)</span>
+        <span><i style="background:var(--green)"></i>Bomb trajectory</span>
+      </span>
+    </div>
+  </section>
+</main>
+
+<script>
+(function (global) {
+  "use strict";
+
+  var NS = "http://www.w3.org/2000/svg";
+  var FT_PER_NM = 6076.11549;
+
+  function node(name, attrs, content) {
+    var element = document.createElementNS(NS, name);
+    Object.keys(attrs || {}).forEach(function (key) {
+      element.setAttribute(key, String(attrs[key]));
+    });
+    if (content !== undefined) element.textContent = content;
+    return element;
+  }
+
+  function format(value, digits) {
+    return Number.isFinite(Number(value)) ? Number(value).toFixed(digits || 0) : "-";
+  }
+
+  function title(profileTitle, beTitle) {
+    return beTitle ? profileTitle + " · " + beTitle : profileTitle;
+  }
+
+  function draw(svg, data) {
+    if (!svg) return "";
+    var extraRows = Array.isArray(data.extraRows) ? data.extraRows.filter(function (row) {
+      return row && row.label && row.value !== undefined;
+    }) : [];
+    var viewHeight = 620 + extraRows.length * 30;
+    svg.setAttribute("viewBox", "0 0 650 " + viewHeight);
+    svg.style.aspectRatio = "650 / " + viewHeight;
+    var root = svg.querySelector("[data-z-root]") || svg.querySelector("g") || svg;
+    if (root !== svg) root.replaceChildren();
+    else while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+    var ink = "#111111";
+    var left = 50, topX = 478, topY = 98, baseY = 442;
+    var TITLE_FS = 27, BODY_FS = 18, FONT_WEIGHT = 900;
+    function add(name, attrs, content) {
+      var element = node(name, attrs, content);
+      root.appendChild(element);
+      return element;
+    }
+    function line(x1, y1, x2, y2, width) {
+      return add("line", { x1: x1, y1: y1, x2: x2, y2: y2, stroke: ink,
+        "stroke-width": width || 3, "stroke-linecap": "square" });
+    }
+    function text(x, y, value, anchor, size) {
+      return add("text", { x: x, y: y, fill: ink, "font-size": size || BODY_FS,
+        "font-weight": FONT_WEIGHT, "text-anchor": anchor || "start" }, value);
+    }
+    function diagX(y) {
+      return left + (baseY - y) / (baseY - topY) * (topX - left);
+    }
+
+    var diagramTitle = title(data.profileTitle || "", data.beTitle || "");
+    text(325, 28, diagramTitle, "middle", TITLE_FS);
+    text(42, 82, format(data.initialKcas, 0) + " KCAS");
+    text(372, 82, format(data.initialMsl, 0) + " ft MSL", "middle");
+    var rollInNm = (Number(data.rollInRangeFt) || 0) / FT_PER_NM;
+    var slantNm = (Number(data.slantFt) || 0) / FT_PER_NM;
+    var groundNm = (Number(data.groundFt) || 0) / FT_PER_NM;
+
+    if (data.levelDelivery) {
+      var levelY = 188, releaseX = 110, impactX = topX;
+      line(50, 98, topX, 98, 3.5);
+      line(left, levelY, impactX, levelY, 3.5);
+      line(left, baseY, impactX, baseY, 3.5);
+      text(topX - 126, topY + 38, "0°");
+      text(470, 132, format(rollInNm, 1) + "nm(Roll in)");
+      text(470, 158, format(slantNm, 1) + "nm(Slant)");
+      text(470, 184, format(groundNm, 1) + "nm(Ground)");
+      var samples = Array.isArray(data.bombSamples) ? data.bombSamples : [];
+      if (samples.length > 1) {
+        var bombRange = Math.max(1, Number(data.bombRangeFt) || samples[samples.length - 1].x || 1);
+        var releaseAgl = Math.max(1, Number(data.releaseAglFt) || 1);
+        var path = samples.map(function (sample, index) {
+          var x = releaseX + (Number(sample.x) || 0) / bombRange * (impactX - releaseX);
+          var y = levelY + (1 - (Number(sample.altitude) || 0) / releaseAgl) * (baseY - levelY);
+          return (index ? "L" : "M") + x.toFixed(1) + "," + y.toFixed(1);
+        }).join(" ");
+        add("path", { d: path, fill: "none", stroke: ink, "stroke-width": 3, "stroke-linecap": "round" });
+      }
+      line(releaseX, levelY - 14, releaseX, levelY + 14, 3);
+      text(releaseX + 18, levelY + 8, "PLANNED RELEASE");
+      text(releaseX + 18, levelY + 32, format(data.releaseMsl, 0) + " ft MSL");
+      text(74, levelY + 78, "RELEASE SPEED");
+      text(74, levelY + 102, format(data.releaseKcas, 0) + " KCAS");
+      text(218, baseY - 16, "MINALT", "end");
+      text(230, baseY - 16, format(data.minAltMsl, 0) + " ft MSL");
+      text(42, 478, "RNLT " + format(data.rnltMsl, 0) + " ft MSL");
+    } else {
+      var plannedY = 224, rnltY = 332;
+      var plannedX = diagX(plannedY), rnltX = diagX(rnltY);
+      line(50, 98, topX, 98, 3.5);
+      line(left, baseY, topX, topY, 3.5);
+      text(topX - 126, topY + 38, format(data.diveAngle, 0) + "°");
+      text(470, 132, format(rollInNm, 1) + "nm(Roll in)");
+      text(470, 158, format(slantNm, 1) + "nm(Slant)");
+      text(470, 184, format(groundNm, 1) + "nm(Ground)");
+      line(plannedX - 100, plannedY, plannedX + 118, plannedY, 3);
+      text(plannedX + 125, plannedY + 6, "PLANNED RELEASE");
+      text(plannedX + 125, plannedY + 30, format(data.releaseMsl, 0) + " ft MSL");
+      text(74, plannedY + 72, "RELEASE SPEED");
+      text(74, plannedY + 96, format(data.releaseKcas, 0) + " KCAS");
+      line(rnltX - 76, rnltY, rnltX + 130, rnltY, 3);
+      text(rnltX + 140, rnltY + 6, "RNLT RELEASE");
+      text(rnltX + 140, rnltY + 30, format(data.rnltMsl, 0) + " ft MSL");
+      line(left, baseY, topX, baseY, 3.5);
+      text(218, baseY - 16, "MINALT", "end");
+      text(230, baseY - 16, format(data.minAltMsl, 0) + " ft MSL");
+    }
+
+    text(42, 518, "AIM-OFF ANGLE:"); text(400, 518, format(data.aimOffAngle, 0) + "°");
+    text(42, 548, data.rollInLeadLabel || "ROLL-IN LEAD:"); text(400, 548, format(data.rollInLead, 0) + "°");
+    extraRows.forEach(function (row, index) {
+      var y = 578 + index * 30;
+      text(42, y, row.label); text(400, y, String(row.value));
+    });
+    var trackingY = 578 + extraRows.length * 30;
+    text(42, trackingY, "TRACKING TIME:"); text(400, trackingY, format(data.trackingTime, 0) + " sec");
+    text(42, trackingY + 30, "ROLL-IN TO IMPACT TIME:"); text(400, trackingY + 30, format(data.rollInToImpactTime, 0) + " sec");
+    return diagramTitle;
+  }
+
+  global.BECommonZDiagram = { draw: draw, title: title, FT_PER_NM: FT_PER_NM, revision: "0.5" };
+})(window);
+
+</script>
+<script>
+(function () {
+  "use strict";
+
+  var root = document.getElementById("calculator");
+  var FT_PER_NM = 6076.11549;
+  var KT_TO_FPS = 1.687809857;
+  var G = 32.174;
+  var DT = 0.01;
+  var solveMode = "height";
+  var bankLinked = true;
+  var currentZFilename = "CCIP_Z_Diagram_REV.1.5.png";
+
+  var WEAPON_DATABASE = Object.freeze([
+    { id: "M82", name: "Mk-82 (LD)", weight: 500, drag: 0.165, area: 2.000, fragAlt0: 2140, fragAlt5: 2500, fragRange0: 2550, fragRange5: 2900, fragTime0: 24.4, fragTime5: 25.9, safety: "MCH Table 5.3" },
+    { id: "B49", name: "Mk-82 AIR (HD)", weight: 550, drag: 1.000, area: 4.000, fragAlt0: 2140, fragAlt5: 2500, fragRange0: 2550, fragRange5: 2900, fragTime0: 24.4, fragTime5: 25.9, safety: "MCH Table 5.3 · Mk-82 All Types" },
+    { id: "M83", name: "Mk-83 (LD)", weight: 1000, drag: 0.165, area: 2.000, fragAlt0: 2455, fragAlt5: 2825, fragRange0: 2905, fragRange5: 3307.5, fragTime0: 26.2, fragTime5: 27.8, safety: "Mk-82/84 midpoint · provisional" },
+    { id: "B85", name: "Mk-83 AIR (HD)", weight: 990, drag: 1.000, area: 4.000, fragAlt0: 2455, fragAlt5: 2825, fragRange0: 2905, fragRange5: 3307.5, fragTime0: 26.2, fragTime5: 27.8, safety: "Mk-82/84 midpoint · provisional" },
+    { id: "M84", name: "Mk-84 (LD)", weight: 2000, drag: 0.165, area: 2.000, fragAlt0: 2770, fragAlt5: 3150, fragRange0: 3260, fragRange5: 3715, fragTime0: 28.0, fragTime5: 29.7, safety: "MCH Table 5.3" },
+    { id: "B50", name: "Mk-84 AIR (HD)", weight: 1975, drag: 1.000, area: 4.000, fragAlt0: 2770, fragAlt5: 3150, fragRange0: 3260, fragRange5: 3715, fragTime0: 28.0, fragTime5: 29.7, safety: "MCH Table 5.3 · Mk-84 All Types" }
+  ].map(function (weapon) { return Object.freeze(weapon); }));
+  var weapons = WEAPON_DATABASE;
+
+  var ACTIVE_BALLISTIC_MODEL_ID = "bms-4.38-acmi-v1";
+  var FREEFALCON_LEGACY_V1_CONFIG = Object.freeze({
+    modelId: "freefalcon-legacy-v1",
+    modelVersion: "1.0.0",
+    timeStep: 0.01,
+    maxSteps: 18002,
+    sampleInterval: 0.1,
+    dragConstantFps2: 140,
+    lowDragScale: 0.2,
+    highDragEffective: 0.9,
+    highDragGravityFactor: 1.0,
+    separationTwoGSeconds: 0.25,
+    dragDelaySeconds: 2
+  });
+  var BMS_438_ACMI_V1_CONFIG = Object.freeze({
+    modelId: "bms-4.38-acmi-v1",
+    modelVersion: "1.0.0",
+    timeStep: 0.01,
+    maxSteps: 18002,
+    sampleInterval: 0.1,
+    dragConstantFps2: 160,
+    lowDragScale: 0.2,
+    highDragEffective: 0.88,
+    highDragGravityFactor: 0.65,
+    separationTwoGSeconds: 0,
+    dragDelaySeconds: 1
+  });
+
+  function controls(key) { return Array.prototype.slice.call(root.querySelectorAll('[data-key="' + key + '"]')); }
+  function first(key) { return controls(key)[0]; }
+  function num(key) {
+    var raw = String(first(key).value).trim().replace(/,/g, "");
+    var parsed = Number(raw);
+    if (raw === "" || !Number.isFinite(parsed)) throw new Error(key + " 입력값이 숫자가 아닙니다.");
+    return parsed;
+  }
+  function val(key) { return first(key).value; }
+  function wheelNum(key) {
+    var node = root.querySelector('[data-wheel-key="' + key + '"]');
+    var raw = node ? String(node.value).trim().replace(/,/g, "") : "";
+    var parsed = Number(raw);
+    if (raw === "" || !Number.isFinite(parsed)) throw new Error(key + " 입력값이 숫자가 아닙니다.");
+    return parsed;
+  }
+  function setValue(key, next) {
+    controls(key).forEach(function (node) {
+      if (node !== document.activeElement) node.value = String(next);
+    });
+  }
+  function syncValue(key, source) {
+    controls(key).forEach(function (node) {
+      if (node !== source) node.value = source.value;
+    });
+  }
+  function setText(id, next) { document.getElementById(id).textContent = next; }
+  function fmt(n, digits) {
+    return Number(n).toLocaleString("ko-KR", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  }
+  function clamp(n, low, high) { return Math.max(low, Math.min(high, n)); }
+  function normalizeHeading(deg) { return ((deg % 360) + 360) % 360; }
+  function headingText(deg) { return String(Math.round(normalizeHeading(deg))).padStart(3, "0") + "°"; }
+
+  function atmosphere(altFt) {
+    var h = Math.max(-1000, altFt) * 0.3048;
+    var temp;
+    var pressure;
+    if (h <= 11000) {
+      temp = 288.15 - 0.0065 * h;
+      pressure = 101325 * Math.pow(temp / 288.15, 5.2558798127);
+    } else {
+      temp = 216.65;
+      pressure = 22632.06 * Math.exp(-9.80665 * (h - 11000) / (287.05287 * temp));
+    }
+    return { pressure: pressure, soundKt: Math.sqrt(1.4 * 287.05287 * temp) * 1.943844492 };
+  }
+
+  function casToTas(casKt, altFt) {
+    var atm = atmosphere(altFt);
+    var mc = casKt / 661.4788;
+    var qc = 101325 * (Math.pow(1 + 0.2 * mc * mc, 3.5) - 1);
+    var mach = Math.sqrt(5 * (Math.pow(qc / atm.pressure + 1, 2 / 7) - 1));
+    return mach * atm.soundKt;
+  }
+
+  function tasToCas(tasKt, altFt) {
+    var atm = atmosphere(altFt);
+    var mach = tasKt / atm.soundKt;
+    var qc = atm.pressure * (Math.pow(1 + 0.2 * mach * mach, 3.5) - 1);
+    var mc = Math.sqrt(5 * (Math.pow(qc / 101325 + 1, 2 / 7) - 1));
+    return mc * 661.4788;
+  }
+
+  function inputToTas(speed, unit, altitudeMsl) {
+    return unit === "MACH" ? speed * atmosphere(altitudeMsl).soundKt : casToTas(speed, altitudeMsl);
+  }
+
+  function escapeLoss(tasKt, diveDeg, escapeG, maneuverTime) {
+    var angle = diveDeg * Math.PI / 180;
+    var speed = tasKt * KT_TO_FPS;
+    var radialG = ((escapeG - Math.cos(angle)) + (escapeG - 1)) / 2;
+    if (!(radialG > 0)) throw new Error("Escape G가 Dive Angle 조건에서 유효하지 않습니다.");
+    return speed * Math.sin(angle) * maneuverTime
+      + speed * speed / (G * radialG) * (1 - Math.cos(angle));
+  }
+
+  function fragmentData(p) {
+    var ratio = p.targetElevation / 5000;
+    function interpolate(seaLevel, fiveThousand) {
+      return seaLevel + (fiveThousand - seaLevel) * ratio;
+    }
+    return {
+      altitude: interpolate(p.weapon.fragAlt0, p.weapon.fragAlt5),
+      range: interpolate(p.weapon.fragRange0, p.weapon.fragRange5),
+      time: interpolate(p.weapon.fragTime0, p.weapon.fragTime5)
+    };
+  }
+
+  function limits(p) {
+    var fragments = fragmentData(p);
+    var base = fragments.altitude;
+    function solve(kcas) {
+      var height = base + 2000;
+      for (var i = 0; i < 28; i += 1) {
+        var tas = casToTas(kcas, p.targetElevation + height);
+        var next = base + escapeLoss(tas, p.diveAngle, p.escapeG, p.maneuverTime);
+        height = 0.45 * height + 0.55 * next;
+      }
+      return height;
+    }
+    var minAltHeight = base * 1.20;
+    var rnltHeight = solve(p.releaseSpeed + p.rnltSpeedMargin);
+    return {
+      fragmentHeight: base,
+      minAltHeight: minAltHeight,
+      rnltHeight: rnltHeight,
+      minAltMsl: p.targetElevation + minAltHeight,
+      rnltMsl: p.targetElevation + rnltHeight
+    };
+  }
+
+  function simulateFixedHorizontalDrag(context) {
+    var p = context.params;
+    var releaseTas = context.releaseTas;
+    var config = context.config;
+    function effectiveDrag(raw) {
+      return raw < 1 ? raw * config.lowDragScale : config.highDragEffective;
+    }
+    var angle = p.diveAngle * Math.PI / 180;
+    var speed = releaseTas * KT_TO_FPS;
+    var drag = effectiveDrag(context.weapon.drag);
+    var highDrag = context.weapon.drag >= 1;
+    var windAngle = p.windDirection * Math.PI / 180;
+    var windFps = p.windSpeed * 3.280839895;
+    var windAlong = -windFps * Math.cos(windAngle);
+    var windCross = -windFps * Math.sin(windAngle);
+    var state = { t: 0, x: 0, down: 0, vx: speed * Math.cos(angle), vd: speed * Math.sin(angle) };
+    var samples = [{ x: 0, altitude: p.releaseAgl }];
+    var nextSample = config.sampleInterval;
+    for (var i = 0; i < config.maxSteps; i += 1) {
+      var old = Object.assign({}, state);
+      var nextTime = state.t + config.timeStep;
+      var newVx = state.vx;
+      var newVd = state.vd;
+      if (config.separationTwoGSeconds > 0 && nextTime <= config.separationTwoGSeconds + 1e-12) {
+        newVd += 2 * G * config.timeStep;
+      } else if (nextTime <= config.dragDelaySeconds + 1e-12) {
+        newVd += G * config.timeStep;
+      } else {
+        newVx = Math.max(0, state.vx - drag * config.dragConstantFps2 * config.timeStep);
+        newVd += G * (highDrag ? config.highDragGravityFactor : 1) * config.timeStep;
+      }
+      state = {
+        t: nextTime,
+        x: state.x + (state.vx + windAlong) * config.timeStep,
+        down: state.down + state.vd * config.timeStep,
+        vx: newVx,
+        vd: newVd
+      };
+      if (state.down >= p.releaseAgl) {
+        var delta = state.down - old.down;
+        var f = delta === 0 ? 1 : (p.releaseAgl - old.down) / delta;
+        f = clamp(f, 0, 1);
+        var impactX = old.x + (state.x - old.x) * f;
+        var impactT = old.t + (state.t - old.t) * f;
+        samples.push({ x: impactX, altitude: 0 });
+        var levelDelivery = Math.abs(p.diveAngle) < 1e-9;
+        var losRange = levelDelivery ? null : p.releaseAgl / Math.tan(angle);
+        return {
+          modelId: config.modelId,
+          modelVersion: config.modelVersion,
+          bombRange: impactX,
+          tof: impactT,
+          losRange: losRange,
+          aod: levelDelivery ? null : losRange - impactX,
+          windAlong: windAlong,
+          windCross: windCross,
+          windDrift: windCross * impactT,
+          samples: samples
+        };
+      }
+      if (state.t >= nextSample) {
+        samples.push({ x: state.x, altitude: Math.max(0, p.releaseAgl - state.down) });
+        nextSample += config.sampleInterval;
+      }
+    }
+    throw new Error("Bomb impact를 제한시간 안에 계산하지 못했습니다.");
+  }
+
+  var BALLISTIC_MODELS = Object.freeze({
+    "bms-4.38-acmi-v1": Object.freeze({
+      id: "bms-4.38-acmi-v1",
+      version: "1.0.0",
+      label: "BMS 4.38 ACMI Calibrated V1",
+      config: BMS_438_ACMI_V1_CONFIG,
+      simulate: simulateFixedHorizontalDrag
+    }),
+    "freefalcon-legacy-v1": Object.freeze({
+      id: "freefalcon-legacy-v1",
+      version: "1.0.0",
+      label: "FreeFalcon Legacy V1",
+      config: FREEFALCON_LEGACY_V1_CONFIG,
+      simulate: simulateFixedHorizontalDrag
+    })
+  });
+
+  function activeBallisticModel() {
+    var model = BALLISTIC_MODELS[ACTIVE_BALLISTIC_MODEL_ID];
+    if (!model) throw new Error("선택된 탄도 모델을 찾을 수 없습니다: " + ACTIVE_BALLISTIC_MODEL_ID);
+    return model;
+  }
+
+  function validateBallisticResult(result) {
+    if (!result || !Number.isFinite(result.bombRange) || !Number.isFinite(result.tof)) {
+      throw new Error("탄도 모델이 유효한 Range/TOF 결과를 반환하지 않았습니다.");
+    }
+    if (!Array.isArray(result.samples) || result.samples.length < 2) {
+      throw new Error("탄도 모델이 유효한 trajectory samples를 반환하지 않았습니다.");
+    }
+    if (result.losRange !== null && !Number.isFinite(result.losRange)) {
+      throw new Error("탄도 모델의 LOS Range 결과가 유효하지 않습니다.");
+    }
+    if (result.aod !== null && !Number.isFinite(result.aod)) {
+      throw new Error("탄도 모델의 AOD 결과가 유효하지 않습니다.");
+    }
+    return result;
+  }
+
+  function bombTrajectory(p, releaseTas) {
+    var model = activeBallisticModel();
+    return validateBallisticResult(model.simulate({
+      params: p,
+      weapon: p.weapon,
+      releaseTas: releaseTas,
+      config: model.config
+    }));
+  }
+
+  function integrateRoll(p, initialMsl) {
+    var bank = p.rollBank * Math.PI / 180;
+    var targetHeading = p.rollHeading * Math.PI / 180;
+    var targetDive = p.diveAngle * Math.PI / 180;
+    var initialSpeed = inputToTas(p.initialSpeed, p.initialUnit, initialMsl) * KT_TO_FPS;
+    var initialTas = initialSpeed / KT_TO_FPS;
+    var rawSpeed = initialSpeed;
+    var rawGamma = 0;
+    var rawHeading = 0;
+    var rawTime = 0;
+    var raw = [{ t: 0, dive: 0, heading: 0 }];
+
+    function rawRates(v, flightPath) {
+      var cosFlightPath = Math.max(0.08, Math.cos(flightPath));
+      return {
+        speed: -G * Math.sin(flightPath),
+        gamma: G / v * (p.rollG * Math.cos(bank) - Math.cos(flightPath)),
+        heading: G * p.rollG * Math.abs(Math.sin(bank)) / (v * cosFlightPath)
+      };
+    }
+
+    for (var i = 0; i < 24000 && rawHeading < targetHeading - 1e-10; i += 1) {
+      var firstRate = rawRates(rawSpeed, rawGamma);
+      if (!(firstRate.heading > 0)) throw new Error("Roll-in 조건에서 유효한 선회율을 계산하지 못했습니다.");
+      var step = Math.min(DT, (targetHeading - rawHeading) / firstRate.heading);
+      var midSpeed = rawSpeed + firstRate.speed * step / 2;
+      var midGamma = rawGamma + firstRate.gamma * step / 2;
+      var midRate = rawRates(midSpeed, midGamma);
+      step = Math.min(step, (targetHeading - rawHeading) / midRate.heading);
+      rawSpeed += midRate.speed * step;
+      rawGamma += midRate.gamma * step;
+      rawHeading = Math.min(targetHeading, rawHeading + midRate.heading * step);
+      rawTime += step;
+      raw.push({ t: rawTime, dive: Math.max(0, -rawGamma), heading: rawHeading });
+    }
+    if (rawHeading < targetHeading - 1e-6) throw new Error("Angle-Off (Heading)을 제한시간 안에 계산하지 못했습니다.");
+
+    var rawFinalDive = raw[raw.length - 1].dive;
+    if (!(rawFinalDive > 0)) throw new Error("Roll-in Bank/G 조건이 하강 방향 Slice Turn을 만들지 못합니다.");
+    var diveScale = targetDive / rawFinalDive;
+    var speed = initialSpeed;
+    var altitudeLoss = 0;
+    var spatialArc = 0;
+    var samples = [{ groundArc: 0, altitudeLoss: 0, x: 0, y: 0, heading: 0 }];
+    var groundArc = 0;
+    var x = 0;
+    var y = 0;
+    var nextSample = 0.1;
+
+    for (var j = 1; j < raw.length; j += 1) {
+      var dive0 = raw[j - 1].dive * diveScale;
+      var dive1 = raw[j].dive * diveScale;
+      var diveMid = (dive0 + dive1) / 2;
+      var headingMid = (raw[j - 1].heading + raw[j].heading) / 2;
+      var segmentTime = raw[j].t - raw[j - 1].t;
+      var speedRate = G * Math.sin(diveMid);
+      var speedMid = speed + speedRate * segmentTime / 2;
+      speed += speedRate * segmentTime;
+      var groundSegment = speedMid * Math.cos(diveMid) * segmentTime;
+      groundArc += groundSegment;
+      x += groundSegment * Math.cos(headingMid);
+      y += groundSegment * Math.sin(headingMid);
+      altitudeLoss += speedMid * Math.sin(diveMid) * segmentTime;
+      spatialArc += speedMid * segmentTime;
+      if (j === raw.length - 1 || raw[j].t >= nextSample - 1e-9) {
+        samples.push({
+          groundArc: groundArc,
+          altitudeLoss: altitudeLoss,
+          x: x,
+          y: y,
+          heading: raw[j].heading
+        });
+        nextSample += 0.1;
+      }
+    }
+
+    var finalHeading = targetHeading;
+    var forward = x * Math.cos(finalHeading) + y * Math.sin(finalHeading);
+    var lateral = Math.abs(-x * Math.sin(finalHeading) + y * Math.cos(finalHeading));
+    var effectiveRadius = groundArc / targetHeading;
+    return {
+      initialTas: initialTas,
+      finalTas: speed / KT_TO_FPS,
+      finalDive: p.diveAngle,
+      time: rawTime,
+      x: x,
+      y: y,
+      forward: forward,
+      lateral: lateral,
+      altitudeLoss: altitudeLoss,
+      groundArc: groundArc,
+      spatialArc: spatialArc,
+      effectiveRadius: effectiveRadius,
+      averageRate: p.rollHeading / rawTime,
+      dynamicFinalDive: rawFinalDive * 180 / Math.PI,
+      samples: samples
+    };
+  }
+
+  function params() {
+    var weapon = weapons.filter(function (w) { return w.id === val("weapon"); })[0] || weapons[0];
+    var p = {
+      weapon: weapon,
+      initialSpeed: num("initialSpeed"),
+      initialUnit: val("initialUnit"),
+      initialAltitude: num("initialAltitude"),
+      diveAngle: num("diveAngle"),
+      trackingTime: num("trackingTime"),
+      releaseMsl: num("releaseAltitude"),
+      releaseSpeed: num("releaseSpeed"),
+      targetElevation: num("targetElevation"),
+      escapeG: num("escapeG"),
+      rnltSpeedMargin: num("rnltSpeedMargin"),
+      maneuverTime: num("maneuverTime"),
+      windDirection: num("windDirection"),
+      windSpeed: num("windSpeed"),
+      rollBank: num("rollBank"),
+      rollG: num("rollG"),
+      rollHeading: num("rollHeading")
+    };
+    if (!(p.initialSpeed > 0)) throw new Error("Initial speed는 0보다 커야 합니다.");
+    if (!(p.diveAngle >= 0 && p.diveAngle < 90)) throw new Error("Dive Angle은 0° 이상 90° 미만이어야 합니다.");
+    if (!(p.releaseMsl > p.targetElevation)) throw new Error("Release 고도 MSL은 Target 고도 MSL보다 높아야 합니다.");
+    if (!(p.releaseSpeed > 0)) throw new Error("Release speed는 0 KCAS보다 커야 합니다.");
+    if (!(p.escapeG > 1 && p.escapeG <= 9)) throw new Error("Escape G는 1G보다 크고 9G 이하여야 합니다.");
+    if (!(p.rnltSpeedMargin >= 0)) throw new Error("RNLT 속도 마진은 0 KCAS 이상이어야 합니다.");
+    if (!(p.maneuverTime >= 0)) throw new Error("Recovery 조작 지연시간은 0 sec 이상이어야 합니다.");
+    if (!(p.windDirection >= 0 && p.windDirection <= 360)) throw new Error("Wind Direction은 0° 이상 360° 이하여야 합니다.");
+    if (!(p.windSpeed >= 0)) throw new Error("Wind Speed는 0 m/s 이상이어야 합니다.");
+    if (!(p.rollBank > 0 && p.rollBank < 180)) throw new Error("Roll-in Bank Angle은 0°보다 크고 180°보다 작아야 합니다.");
+    if (!(p.rollG > 1 && p.rollG <= 9)) throw new Error("Roll-in G는 1G보다 크고 9G 이하여야 합니다.");
+    if (!(p.rollHeading > 0 && p.rollHeading < 180)) throw new Error("Angle-Off (Heading)은 0°보다 크고 180°보다 작아야 합니다.");
+    if (p.diveAngle > 0 && solveMode === "height" && !(p.initialAltitude > p.releaseMsl)) {
+      throw new Error("Initial 고도 MSL은 Release 고도 MSL보다 높아야 합니다.");
+    }
+    if ((solveMode === "time" || p.diveAngle === 0) && !(p.trackingTime > 0)) throw new Error("Tracking Time은 0초보다 커야 합니다.");
+    return p;
+  }
+
+  function resolvePatternInputs(p) {
+    if (bankLinked) {
+      p.rollBank = Math.round(90 + p.diveAngle / 2);
+      setValue("rollBank", p.rollBank.toFixed(0));
+    }
+    return p;
+  }
+
+  function profile(p, bomb, safety) {
+    var angle = p.diveAngle * Math.PI / 180;
+    var levelDelivery = Math.abs(p.diveAngle) < 1e-9;
+    var releaseMsl = Math.max(p.releaseMsl, safety.rnltMsl);
+    var releaseAgl = releaseMsl - p.targetElevation;
+    var releaseTas = casToTas(p.releaseSpeed, releaseMsl);
+    var initialAgl;
+    var initialMsl;
+    var trackAgl;
+    var path;
+    var tracking;
+    var roll;
+
+    if (levelDelivery) {
+      tracking = p.trackingTime;
+      initialAgl = releaseAgl;
+      for (var levelIteration = 0; levelIteration < 12; levelIteration += 1) {
+        initialMsl = p.targetElevation + initialAgl;
+        roll = integrateRoll(p, initialMsl);
+        initialAgl = releaseAgl + roll.altitudeLoss;
+      }
+      initialMsl = p.targetElevation + initialAgl;
+      roll = integrateRoll(p, initialMsl);
+      trackAgl = initialAgl - roll.altitudeLoss;
+      path = ((roll.finalTas + releaseTas) / 2) * KT_TO_FPS * tracking;
+    } else if (solveMode === "height") {
+      initialMsl = p.initialAltitude;
+      initialAgl = initialMsl - p.targetElevation;
+      roll = integrateRoll(p, initialMsl);
+      trackAgl = initialAgl - roll.altitudeLoss;
+      if (!(trackAgl > releaseAgl)) throw new Error("Initial 고도에서 Roll-in 손실을 빼면 RNLT/Release 기준고도보다 낮습니다.");
+      path = (trackAgl - releaseAgl) / Math.sin(angle);
+      tracking = path / (((roll.finalTas + releaseTas) / 2) * KT_TO_FPS);
+    } else {
+      tracking = p.trackingTime;
+      initialAgl = releaseAgl + tracking * releaseTas * KT_TO_FPS * Math.sin(angle) + 2500;
+      for (var i = 0; i < 30; i += 1) {
+        initialMsl = p.targetElevation + initialAgl;
+        roll = integrateRoll(p, initialMsl);
+        path = ((roll.finalTas + releaseTas) / 2) * KT_TO_FPS * tracking;
+        var nextInitial = releaseAgl + path * Math.sin(angle) + roll.altitudeLoss;
+        initialAgl = 0.45 * initialAgl + 0.55 * nextInitial;
+      }
+      initialMsl = p.targetElevation + initialAgl;
+      roll = integrateRoll(p, initialMsl);
+      path = ((roll.finalTas + releaseTas) / 2) * KT_TO_FPS * tracking;
+      trackAgl = initialAgl - roll.altitudeLoss;
+    }
+
+    var trackGround = path * Math.cos(angle);
+    var mapGround = trackGround + bomb.bombRange;
+    var mapSlant = Math.hypot(trackAgl, mapGround);
+    var losDeg = Math.atan2(trackAgl, mapGround) * 180 / Math.PI;
+    var aimOffRange = bomb.aod === null ? null : mapGround + bomb.aod;
+    var offsetDistance = aimOffRange === null ? mapGround : aimOffRange;
+    var heading = p.rollHeading * Math.PI / 180;
+    var targetX = roll.x + mapGround * Math.cos(heading);
+    var targetY = roll.y + mapGround * Math.sin(heading);
+    var offsetX = roll.x + offsetDistance * Math.cos(heading);
+    var offsetY = roll.y + offsetDistance * Math.sin(heading);
+    var targetBearing = Math.atan2(targetY, targetX) * 180 / Math.PI;
+    var offsetBearing = Math.atan2(offsetY, offsetX) * 180 / Math.PI;
+    var targetLead = p.rollHeading - targetBearing;
+    var offsetLead = p.rollHeading - offsetBearing;
+    var totalGround = Math.hypot(targetX, targetY);
+    // Roll-in Radius의 단일 출처: Dive Bomb Profile roll.effectiveRadius.
+    // BOX 등 후속 화면에서도 이 값을 직접 사용하고 별도 근사식으로 재계산하지 않는다.
+    var effectiveRollInRadius = roll.effectiveRadius;
+    return {
+      initialAgl: initialAgl,
+      initialMsl: initialMsl,
+      initialTas: roll.initialTas,
+      rolloutTas: roll.finalTas,
+      trackAgl: trackAgl,
+      trackMsl: p.targetElevation + trackAgl,
+      releaseAgl: releaseAgl,
+      releaseMsl: releaseMsl,
+      releaseTas: releaseTas,
+      trackingTime: tracking,
+      trackGround: trackGround,
+      mapGround: mapGround,
+      mapSlant: mapSlant,
+      aimOffRange: aimOffRange,
+      totalGround: totalGround,
+      effectiveRollInRadius: effectiveRollInRadius,
+      totalGroundTrack: roll.groundArc + mapGround,
+      initialSlant: Math.hypot(initialAgl, totalGround),
+      turnGroundComponent: roll.forward,
+      targetBearing: targetBearing,
+      offsetBearing: offsetBearing,
+      targetLead: targetLead,
+      offsetLead: offsetLead,
+      losDeg: losDeg,
+      iaa: losDeg - p.diveAngle,
+      levelDelivery: levelDelivery,
+      roll: roll
+    };
+  }
+
+  function solveWheel(p, bomb, safety) {
+    var attackHeading = wheelNum("attackHeading");
+    var aircraftCountRaw = wheelNum("aircraftCount");
+    if (!(attackHeading >= 0 && attackHeading < 360)) throw new Error("Attack Heading은 0° 이상 360° 미만이어야 합니다.");
+    if (!(aircraftCountRaw >= 2 && aircraftCountRaw <= 8)) throw new Error("Aircraft Count는 2–8 범위여야 합니다.");
+    var aircraftCount = Math.round(aircraftCountRaw);
+
+    function evaluate(headingChange) {
+      var candidate = Object.assign({}, p, { rollHeading: headingChange });
+      var candidateProfile = profile(candidate, bomb, safety);
+      var psi = headingChange * Math.PI / 180;
+      var closure = candidateProfile.roll.x + candidateProfile.mapGround * Math.cos(psi);
+      var targetRight = candidateProfile.roll.y + candidateProfile.mapGround * Math.sin(psi);
+      return {
+        p: candidate,
+        prof: candidateProfile,
+        headingChange: headingChange,
+        closure: closure,
+        targetRight: targetRight
+      };
+    }
+
+    var left = evaluate(90.001);
+    var right = null;
+    for (var deg = 91; deg <= 155; deg += 1) {
+      var current;
+      try {
+        current = evaluate(deg);
+      } catch (ignored) {
+        break;
+      }
+      if (left.closure === 0 || left.closure * current.closure <= 0) {
+        right = current;
+        break;
+      }
+      left = current;
+    }
+    if (!right) throw new Error("90–155° 범위에서 Target-centered Wheel 접선해를 찾지 못했습니다. Initial 고도, Dive Angle 또는 Roll-in Bank/G 조건을 조정하십시오.");
+
+    for (var i = 0; i < 34; i += 1) {
+      var middle = evaluate((left.headingChange + right.headingChange) / 2);
+      if (left.closure * middle.closure <= 0) right = middle;
+      else left = middle;
+    }
+    var solved = evaluate((left.headingChange + right.headingChange) / 2);
+    if (!(solved.targetRight > 0)) throw new Error("RIGHT Wheel 조건에서 Target이 우현에 위치하지 않습니다.");
+
+    var wheelRadius = solved.targetRight;
+    var speedFps = solved.prof.initialTas * KT_TO_FPS;
+    var wheelBankRad = Math.atan(speedFps * speedFps / (G * wheelRadius));
+    var wheelBank = wheelBankRad * 180 / Math.PI;
+    var wheelG = 1 / Math.cos(wheelBankRad);
+    var wheelRate = speedFps / wheelRadius * 180 / Math.PI;
+    var orbitTime = 2 * Math.PI * wheelRadius / speedFps;
+    var attackInterval = orbitTime / aircraftCount;
+    var aircraftSpacing = 2 * Math.PI * wheelRadius / aircraftCount;
+    var startHeading = normalizeHeading(attackHeading - solved.headingChange);
+    var startRadial = normalizeHeading(startHeading - 90);
+    var sequence = [1];
+    for (var n = aircraftCount; n >= 2; n -= 1) sequence.push(n);
+
+    return Object.assign(solved, {
+      attackHeading: attackHeading,
+      aircraftCount: aircraftCount,
+      sequence: sequence,
+      interceptAngle: solved.headingChange - 90,
+      wheelRadius: wheelRadius,
+      wheelSlant: Math.hypot(solved.prof.initialAgl, wheelRadius),
+      wheelBank: wheelBank,
+      wheelG: wheelG,
+      wheelRate: wheelRate,
+      orbitTime: orbitTime,
+      attackInterval: attackInterval,
+      aircraftSpacing: aircraftSpacing,
+      startHeading: startHeading,
+      startRadial: startRadial
+    });
+  }
+
+  function drawWheel(p, prof, wheel) {
+    var host = document.getElementById("wheel-root");
+    host.replaceChildren();
+    var cx = 472;
+    var cy = 307;
+    var radius = 224;
+    var scale = radius / wheel.wheelRadius;
+
+    function add(name, attrs, content) {
+      var node = svgNode(name, attrs, content);
+      host.appendChild(node);
+      return node;
+    }
+    function pointOnRadial(radial, r) {
+      var a = radial * Math.PI / 180;
+      return { x: cx + r * Math.sin(a), y: cy - r * Math.cos(a) };
+    }
+    function localToSvg(x, y) {
+      var h = wheel.startHeading * Math.PI / 180;
+      var east = x * Math.sin(h) + y * Math.cos(h);
+      var north = x * Math.cos(h) - y * Math.sin(h);
+      var start = pointOnRadial(wheel.startRadial, radius);
+      return { x: start.x + east * scale, y: start.y - north * scale };
+    }
+    function label(x, y, main, sub, anchor, color) {
+      var node = add("text", { x: x, y: y, "text-anchor": anchor || "middle", fill: color || "var(--text)", "font-size": 14, "font-weight": 800 });
+      node.appendChild(svgNode("tspan", { x: x, dy: 0 }, main));
+      if (sub) node.appendChild(svgNode("tspan", { x: x, dy: 18, fill: "var(--muted)", "font-size": 11, "font-weight": 650 }, sub));
+      return node;
+    }
+
+    add("circle", { cx: cx, cy: cy, r: radius, fill: "none", stroke: "var(--blue)", "stroke-width": 3, "stroke-dasharray": "10 8", opacity: .82 });
+    var arcStart = pointOnRadial(wheel.startRadial - 118, radius);
+    var arcEnd = pointOnRadial(wheel.startRadial - 36, radius);
+    add("path", {
+      d: "M " + arcStart.x + " " + arcStart.y + " A " + radius + " " + radius + " 0 0 1 " + arcEnd.x + " " + arcEnd.y,
+      fill: "none", stroke: "var(--blue)", "stroke-width": 4, "marker-end": "url(#wheel-arrow-blue)"
+    });
+
+    var start = pointOnRadial(wheel.startRadial, radius);
+    add("line", { x1: cx, y1: cy, x2: start.x, y2: start.y, stroke: "var(--line)", "stroke-width": 1.5, "stroke-dasharray": "5 5" });
+
+    var rollPoints = prof.roll.samples.map(function (sample) { return localToSvg(sample.x || 0, sample.y || 0); });
+    var rollPath = rollPoints.map(function (pt, index) { return (index === 0 ? "M " : "L ") + pt.x.toFixed(2) + " " + pt.y.toFixed(2); }).join(" ");
+    add("path", { d: rollPath, fill: "none", stroke: "var(--amber)", "stroke-width": 5, "stroke-linecap": "round", "stroke-linejoin": "round" });
+    var rollout = rollPoints[rollPoints.length - 1];
+    add("line", { x1: rollout.x, y1: rollout.y, x2: cx, y2: cy, stroke: "var(--green)", "stroke-width": 4, "marker-end": "url(#wheel-arrow-green)" });
+
+    var attackAhead = pointOnRadial(wheel.attackHeading, radius * .72);
+    var attackBehind = pointOnRadial(wheel.attackHeading + 180, radius * .48);
+    add("line", { x1: attackBehind.x, y1: attackBehind.y, x2: attackAhead.x, y2: attackAhead.y, stroke: "var(--green)", "stroke-width": 1.6, "stroke-dasharray": "6 5", opacity: .8, "marker-end": "url(#wheel-arrow-green)" });
+
+    add("circle", { cx: cx, cy: cy, r: 10, fill: "var(--green)", stroke: "var(--panel)", "stroke-width": 4 });
+    add("line", { x1: cx - 16, y1: cy, x2: cx + 16, y2: cy, stroke: "var(--green)", "stroke-width": 2 });
+    add("line", { x1: cx, y1: cy - 16, x2: cx, y2: cy + 16, stroke: "var(--green)", "stroke-width": 2 });
+    label(cx, cy + 34, "TARGET", "CENTER OF WHEEL", "middle", "var(--green)");
+
+    function aircraft(radial, number, isRip) {
+      var pt = pointOnRadial(radial, radius);
+      var heading = normalizeHeading(radial + 90);
+      var rotation = heading;
+      var group = add("g", { transform: "translate(" + pt.x + " " + pt.y + ") rotate(" + rotation + ")" });
+      group.appendChild(svgNode("path", { d: "M0,-15 L8,10 L0,6 L-8,10 Z", fill: isRip ? "var(--amber)" : "var(--blue)", stroke: "var(--panel)", "stroke-width": 2 }));
+      group.appendChild(svgNode("circle", { cx: 0, cy: 0, r: 18, fill: "none", stroke: isRip ? "var(--amber)" : "var(--blue)", "stroke-width": isRip ? 2.5 : 1.2, opacity: .85 }));
+      label(pt.x + 24, pt.y - 18, "#" + number, isRip ? "RIP" : "", "start", isRip ? "var(--amber)" : "var(--blue)");
+    }
+
+    wheel.sequence.forEach(function (number, index) {
+      aircraft(wheel.startRadial - index * 360 / wheel.aircraftCount, number, index === 0);
+    });
+
+    label(24, 38, "RIGHT WHEEL · TARGET-CENTERED", "AIRCRAFT " + wheel.aircraftCount + " · ORDER " + wheel.sequence.join(" → "), "start", "var(--blue)");
+    label(24, 86, "WHEEL / ARC RANGE " + fmt(wheel.wheelRadius / FT_PER_NM, 3) + " NM", "SLANT " + fmt(wheel.wheelSlant / FT_PER_NM, 3) + " NM", "start", "var(--text)");
+    label(24, 134, "BANK " + fmt(wheel.wheelBank, 1) + "° / " + fmt(wheel.wheelG, 2) + " G", "TURN RATE " + fmt(wheel.wheelRate, 2) + "°/s", "start", "var(--text)");
+    label(start.x, start.y + 42, "ROLL-IN START", headingText(wheel.startHeading) + " · ΔHDG " + fmt(wheel.headingChange, 1) + "°", "middle", "var(--amber)");
+    label(rollout.x, rollout.y - 22, "TRACK POINT", "ROLL-OUT", "middle", "var(--green)");
+    label(875, 552, "OFF SAFE → REJOIN RIGHT WHEEL", "EGRESS / REJOIN PATH IS CONCEPTUAL", "end", "var(--muted)");
+  }
+
+  function releaseState(releaseMsl, safety) {
+    if (releaseMsl >= safety.rnltMsl) return { label: "NORMAL · RNLT 이상", cls: "safe" };
+    if (releaseMsl >= safety.minAltMsl) return { label: "CAUTION · MINALT 이상 / RNLT 미만", cls: "caution" };
+    return { label: "INVALID · MINALT 미만", cls: "invalid" };
+  }
+
+  function deliveryProfileName(p) {
+    if (Math.abs(p.diveAngle) < 1e-9) return "VLD";
+    if (p.diveAngle > 30) return "HADB";
+    if (Math.abs(p.diveAngle - 30) < 1e-9) return "DB";
+    return p.weapon.drag >= 1 || p.weapon.name.indexOf("(HD)") !== -1 ? "LAHD" : "LALD";
+  }
+
+  function zDiagramTitle(p) {
+    return fmt(p.diveAngle, 0) + "° " + deliveryProfileName(p) + " · WHEEL";
+  }
+
+  function svgNode(name, attrs, content) {
+    var node = document.createElementNS("http://www.w3.org/2000/svg", name);
+    Object.keys(attrs || {}).forEach(function (key) { node.setAttribute(key, String(attrs[key])); });
+    if (content !== undefined) node.textContent = content;
+    return node;
+  }
+
+  function drawZDiagram(p, bomb, prof, safety) {
+    var rootNode = document.getElementById("z-root");
+    rootNode.replaceChildren();
+    var diagramTitle = zDiagramTitle(p);
+    document.getElementById("z-title").textContent = diagramTitle + " CCIP Z-Diagram";
+    rootNode.appendChild(svgNode("text", {
+      x: 325, y: 19, fill: "#111111", "font-size": 18,
+      "font-weight": 900, "text-anchor": "middle"
+    }, diagramTitle));
+    var bodyNode = svgNode("g", { transform: "translate(0 24)" });
+    rootNode.appendChild(bodyNode);
+    var ink = "#111111";
+    var muted = "#111111";
+    var left = 50, topX = 478, topY = 52, baseY = 418;
+
+    function add(name, attrs, content) {
+      var node = svgNode(name, attrs, content);
+      bodyNode.appendChild(node);
+      return node;
+    }
+    function line(x1, y1, x2, y2, width, color) {
+      return add("line", { x1: x1, y1: y1, x2: x2, y2: y2, stroke: color || ink, "stroke-width": width || 3, "stroke-linecap": "square" });
+    }
+    function textAt(x, y, value, size, weight, anchor, color) {
+      return add("text", {
+        x: x, y: y, fill: color || ink, "font-size": size || 15,
+        "font-weight": weight || 800, "text-anchor": anchor || "start"
+      }, value);
+    }
+    function valueAt(x, y, value, anchor) {
+      return textAt(x, y, value, 13, 750, anchor || "start", muted);
+    }
+    function diagX(y) {
+      return left + (baseY - y) / (baseY - topY) * (topX - left);
+    }
+
+    var initialKcas = tasToCas(prof.initialTas, prof.initialMsl);
+    if (prof.levelDelivery) {
+      var levelY = 142;
+      var releaseX = 96;
+      var impactX = topX;
+      valueAt(42, 30, fmt(initialKcas, 1) + " KCAS");
+      valueAt(372, 30, fmt(prof.initialMsl, 1) + " ft MSL", "middle");
+      line(50, 48, topX, 48, 3.5);
+      line(left, levelY, impactX, levelY, 3.5);
+      line(left, baseY, impactX, baseY, 3.5);
+      textAt(228, 84, "LEVEL / FREE FALL", 14, 850);
+      valueAt(400, 84, "0.0°", "end");
+      textAt(486, 73, "ROLL-IN RANGE", 12, 850);
+      valueAt(638, 73, fmt(prof.totalGround / FT_PER_NM, 1) + " NM", "end");
+      textAt(486, 93, "ROLL-IN SLANT", 12, 850);
+      valueAt(638, 93, fmt(prof.initialSlant / FT_PER_NM, 1) + " NM", "end");
+      textAt(486, 113, "GROUND RANGE", 12, 850);
+      valueAt(638, 113, fmt(prof.mapGround / FT_PER_NM, 1) + " NM", "end");
+
+      var bombPath = bomb.samples.map(function (sample, index) {
+        var px = releaseX + sample.x / Math.max(1, bomb.bombRange) * (impactX - releaseX);
+        var py = levelY + (1 - sample.altitude / Math.max(1, prof.releaseAgl)) * (baseY - levelY);
+        return (index ? "L" : "M") + px.toFixed(1) + "," + py.toFixed(1);
+      }).join(" ");
+      add("path", { d: bombPath, fill: "none", stroke: ink, "stroke-width": 3, "stroke-linecap": "round" });
+      line(releaseX, levelY - 14, releaseX, levelY + 14, 3);
+      add("circle", { cx: impactX, cy: baseY, r: 5, fill: ink });
+      textAt(releaseX + 10, levelY + 28, "PLANNED RELEASE", 14, 850);
+      valueAt(releaseX + 10, levelY + 48, fmt(prof.releaseMsl, 1) + " ft MSL");
+      textAt(74, levelY + 94, "RELEASE SPEED", 14, 850);
+      valueAt(74, levelY + 114, fmt(p.releaseSpeed, 1) + " KCAS");
+      textAt(impactX - 8, baseY - 12, "TARGET", 13, 850, "end");
+      textAt(218, baseY - 14, "MINALT", 14, 850, "end");
+      valueAt(230, baseY - 14, fmt(safety.minAltMsl, 1) + " ft MSL");
+      textAt(42, 442, "RNLT " + fmt(safety.rnltMsl, 1) + " ft MSL", 12, 850);
+
+      textAt(42, 462, "PARAMETERS", 14, 900);
+      textAt(42, 492, "ROLL-IN LEAD:", 14, 850);
+      valueAt(400, 492, fmt(prof.offsetLead, 1) + "°");
+      textAt(42, 521, "AIM-OFF ANGLE:", 14, 850);
+      valueAt(400, 521, fmt(prof.iaa, 1) + "°");
+      textAt(42, 550, "TRACKING TIME:", 14, 850);
+      valueAt(400, 550, fmt(prof.trackingTime, 1) + " s");
+      textAt(42, 579, "ROLL-IN TO IMPACT TIME:", 14, 850);
+      valueAt(400, 579, fmt(prof.roll.time + prof.trackingTime + bomb.tof, 1) + " s");
+      return;
+    }
+    var plannedY = 188;
+    var rnltY = 302;
+    var plannedX = diagX(plannedY);
+    var rnltX = diagX(rnltY);
+
+    valueAt(42, 30, fmt(initialKcas, 1) + " KCAS");
+    valueAt(372, 30, fmt(prof.initialMsl, 1) + " ft MSL", "middle");
+    line(50, 48, topX, 48, 3.5);
+    line(left, baseY, topX, topY, 3.5);
+
+    textAt(228, 84, "DIVE ANGLE", 14, 850);
+    valueAt(356, 84, fmt(p.diveAngle, 0) + "°");
+    textAt(486, 73, "ROLL-IN RANGE", 12, 850);
+    valueAt(638, 73, fmt(prof.totalGround / FT_PER_NM, 1) + " NM", "end");
+    textAt(486, 93, "ROLL-IN SLANT", 12, 850);
+    valueAt(638, 93, fmt(prof.initialSlant / FT_PER_NM, 1) + " NM", "end");
+    textAt(486, 113, "GROUND RANGE", 12, 850);
+    valueAt(638, 113, fmt(prof.mapGround / FT_PER_NM, 1) + " NM", "end");
+
+    line(plannedX - 100, plannedY, plannedX + 118, plannedY, 3);
+    textAt(plannedX + 125, plannedY + 5, "PLANNED RELEASE", 14, 850);
+    valueAt(plannedX + 125, plannedY + 24, fmt(prof.releaseMsl, 1) + " ft MSL");
+    textAt(74, plannedY + 68, "RELEASE SPEED", 14, 850);
+    valueAt(74, plannedY + 88, fmt(p.releaseSpeed, 1) + " KCAS");
+
+    line(rnltX - 76, rnltY, rnltX + 130, rnltY, 3);
+    textAt(rnltX + 140, rnltY + 5, "RNLT RELEASE", 14, 850);
+    valueAt(rnltX + 140, rnltY + 24, fmt(safety.rnltMsl, 1) + " ft MSL");
+
+    line(left, baseY, topX, baseY, 3.5);
+    textAt(218, baseY - 14, "MINALT", 14, 850, "end");
+    valueAt(230, baseY - 14, fmt(safety.minAltMsl, 1) + " ft MSL");
+
+    textAt(42, 462, "PARAMETERS", 14, 900);
+    textAt(42, 492, "ROLL-IN LEAD:", 14, 850);
+    valueAt(400, 492, fmt(prof.offsetLead, 1) + "°");
+    textAt(42, 521, "AIM-OFF ANGLE:", 14, 850);
+    valueAt(400, 521, fmt(prof.iaa, 1) + "°");
+    textAt(42, 550, "TRACKING TIME:", 14, 850);
+    valueAt(400, 550, fmt(prof.trackingTime, 1) + " s");
+    textAt(42, 579, "ROLL-IN TO IMPACT TIME:", 14, 850);
+    valueAt(400, 579, fmt(prof.roll.time + prof.trackingTime + bomb.tof, 1) + " s");
+  }
+
+  // BE Common Z-Diagram Rev0.5 adapter. The preceding function is retained
+  // for compatibility review against the promoted official implementation.
+  drawZDiagram = function (p, bomb, prof, safety) {
+    var profileTitle = fmt(p.diveAngle, 0) + "° " + deliveryProfileName(p);
+    var diagramTitle = BECommonZDiagram.draw(document.getElementById("z-svg"), {
+      profileTitle: profileTitle,
+      beTitle: "WHEEL",
+      initialKcas: tasToCas(prof.initialTas, prof.initialMsl),
+      initialMsl: prof.initialMsl,
+      diveAngle: p.diveAngle,
+      rollInRangeFt: prof.totalGround,
+      slantFt: prof.initialSlant,
+      groundFt: prof.mapGround,
+      releaseMsl: prof.releaseMsl,
+      releaseKcas: p.releaseSpeed,
+      rnltMsl: safety.rnltMsl,
+      minAltMsl: safety.minAltMsl,
+      rollInLead: prof.offsetLead,
+      rollInLeadLabel: "ROLL-IN LEAD (WHEEL):",
+      aimOffAngle: prof.iaa,
+      trackingTime: prof.trackingTime,
+      rollInToImpactTime: prof.roll.time + prof.trackingTime + bomb.tof,
+      levelDelivery: prof.levelDelivery,
+      bombSamples: bomb.samples,
+      bombRangeFt: bomb.bombRange,
+      releaseAglFt: prof.releaseAgl
+    });
+    document.getElementById("z-title").textContent = diagramTitle + " CCIP Z-Diagram";
+  };
+
+  function saveSvgAsPng(svg, filename) {
+    var clone = svg.cloneNode(true);
+    clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    var sourceNodes = [svg].concat(Array.prototype.slice.call(svg.querySelectorAll("*")));
+    var cloneNodes = [clone].concat(Array.prototype.slice.call(clone.querySelectorAll("*")));
+    sourceNodes.forEach(function (source, index) {
+      var target = cloneNodes[index];
+      var style = window.getComputedStyle(source);
+      ["fill", "stroke", "color", "font-family", "font-size", "font-weight"].forEach(function (property) {
+        var value = style.getPropertyValue(property);
+        if (value && value !== "none") target.style.setProperty(property, value);
+      });
+    });
+
+    var viewBox = svg.viewBox.baseVal;
+    var scale = 2;
+    clone.setAttribute("width", viewBox.width * scale);
+    clone.setAttribute("height", viewBox.height * scale);
+    var markup = new XMLSerializer().serializeToString(clone);
+    var blob = new Blob([markup], { type: "image/svg+xml;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var image = new Image();
+    image.onload = function () {
+      var canvas = document.createElement("canvas");
+      canvas.width = viewBox.width * scale;
+      canvas.height = viewBox.height * scale;
+      var context = canvas.getContext("2d");
+      var background = window.getComputedStyle(svg.parentElement).backgroundColor;
+      context.fillStyle = background && background !== "rgba(0, 0, 0, 0)" ? background : "#ffffff";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(function (png) {
+        if (!png) return;
+        var pngUrl = URL.createObjectURL(png);
+        var link = document.createElement("a");
+        link.href = pngUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.setTimeout(function () { URL.revokeObjectURL(pngUrl); }, 1000);
+      }, "image/png");
+    };
+    image.onerror = function () {
+      URL.revokeObjectURL(url);
+      var error = document.getElementById("error");
+      error.textContent = "Z-Diagram PNG를 생성하지 못했습니다.";
+      error.classList.add("show");
+    };
+    image.src = url;
+  }
+
+  function drawGeometry(p, bomb, prof, safety) {
+    var labels = document.getElementById("p-labels");
+    labels.replaceChildren();
+    var left = 82, right = 900, top = 54, ground = 370;
+    var rolloutX = prof.roll.groundArc;
+    var releaseX = rolloutX + prof.trackGround;
+    var targetX = rolloutX + prof.mapGround;
+    var fpmX = prof.levelDelivery ? targetX : rolloutX + prof.trackAgl / Math.tan(p.diveAngle * Math.PI / 180);
+    var releaseFpmX = prof.levelDelivery ? releaseX : releaseX + bomb.losRange;
+    var maxX = Math.max(targetX, fpmX, releaseFpmX) * 1.08;
+    var maxH = Math.max(prof.initialAgl, prof.releaseAgl) * 1.12;
+    function xs(x) { return left + x / maxX * (right - left); }
+    function ys(h) { return ground - h / maxH * (ground - top); }
+    function line(id, x1, y1, x2, y2) {
+      var n = document.getElementById(id);
+      n.setAttribute("x1", x1); n.setAttribute("y1", y1); n.setAttribute("x2", x2); n.setAttribute("y2", y2);
+    }
+    function point(id, x, y) {
+      var n = document.getElementById(id);
+      n.setAttribute("cx", x); n.setAttribute("cy", y);
+    }
+    function label(x, y, main, sub, anchor, color) {
+      var n = svgNode("text", { x: x, y: y, "text-anchor": anchor || "start", fill: color || "var(--text)", "font-size": 13, "font-weight": 800 });
+      n.appendChild(svgNode("tspan", { x: x, dy: 0 }, main));
+      if (sub) n.appendChild(svgNode("tspan", { x: x, dy: 17, fill: "var(--muted)", "font-size": 11, "font-weight": 600 }, sub));
+      labels.appendChild(n);
+    }
+
+    var xi = xs(0), yi = ys(prof.initialAgl);
+    var xo = xs(rolloutX), yo = ys(prof.trackAgl);
+    var xr = xs(releaseX), yr = ys(prof.releaseAgl);
+    var xt = xs(targetX), xf = xs(fpmX), xrf = xs(releaseFpmX);
+    line("p-flight", xo, yo, prof.levelDelivery ? xt : xf, prof.levelDelivery ? yo : ground);
+    line("p-los", xo, yo, xt, ground);
+    line("p-map-ground", xo + 8, ground + 44, xt - 8, ground + 44);
+    line("p-rollin-range", xi + 8, ground + 112, xt - 8, ground + 112);
+    var aodLine = document.getElementById("p-aod");
+    var aorLine = document.getElementById("p-aor");
+    var fpmPoint = document.getElementById("p-fpm-point");
+    aodLine.style.display = prof.levelDelivery ? "none" : "";
+    aorLine.style.display = prof.levelDelivery ? "none" : "";
+    fpmPoint.style.display = prof.levelDelivery ? "none" : "";
+    if (!prof.levelDelivery) {
+      line("p-aod", Math.min(xt, xrf), ground + 19, Math.max(xt, xrf), ground + 19);
+      line("p-aor", xo + 8, ground + 78, xf - 8, ground + 78);
+    }
+    line("p-initial-alt", xi, yi, xi, ground);
+    line("p-track-alt", xo, yo, xo, ground);
+    line("p-release-alt", xr, yr, xr, ground);
+    point("p-initial-point", xi, yi);
+    point("p-rollout-point", xo, yo);
+    point("p-release-point", xr, yr);
+    point("p-target-point", xt, ground);
+    if (!prof.levelDelivery) point("p-fpm-point", xf, ground);
+    document.getElementById("p-roll").setAttribute("d", prof.roll.samples.map(function (s, i) {
+      return (i ? "L" : "M") + xs(s.groundArc).toFixed(1) + "," + ys(prof.initialAgl - s.altitudeLoss).toFixed(1);
+    }).join(" "));
+    document.getElementById("p-bomb").setAttribute("d", bomb.samples.map(function (s, i) {
+      return (i ? "L" : "M") + xs(releaseX + s.x).toFixed(1) + "," + ys(s.altitude).toFixed(1);
+    }).join(" "));
+
+    var initialDisplay = p.initialUnit === "MACH" ? "M " + fmt(p.initialSpeed, 2) : fmt(p.initialSpeed, 0) + " KCAS";
+    label(xi + 10, yi - 12, "INITIAL " + fmt(prof.initialMsl, 0) + " ft MSL", initialDisplay, "start", "var(--blue)");
+    label(xo + 8, yo - 10, "TRACK POINT " + fmt(prof.trackMsl, 0) + " ft MSL", fmt(prof.rolloutTas, 1) + " KTAS · " + (prof.levelDelivery ? "LEVEL / FREE FALL" : fmt(p.diveAngle, 1) + "°"), "start", "var(--blue)");
+    label(xr + 9, yr - 10, "RELEASE " + fmt(prof.releaseMsl, 0) + " ft MSL", fmt(p.releaseSpeed, 0) + " KCAS", "start", "var(--amber)");
+    label(xt, ground - 14, "TARGET", fmt(p.targetElevation, 0) + " ft MSL · " + p.weapon.name, "middle", "var(--green)");
+    label((xo + xt) / 2, (yo + ground) / 2 - 12, "SLANT RANGE " + fmt(prof.mapSlant / FT_PER_NM, 3) + " NM", "AIM-OFF ANGLE " + fmt(prof.iaa, 2) + "° · LOS " + fmt(prof.losDeg, 2) + "°", "middle", "var(--amber)");
+    label((xo + xt) / 2, ground + 39, "GROUND RANGE " + fmt(prof.mapGround / FT_PER_NM, 3) + " NM", "TRACK POINT → TARGET", "middle", "var(--blue)");
+    label((xi + xt) / 2, ground + 107, "ROLL-IN RANGE " + fmt(prof.totalGround / FT_PER_NM, 3) + " NM", "ROLL-IN START → TARGET · HORIZONTAL", "middle", "var(--blue)");
+    if (!prof.levelDelivery) {
+      label((Math.min(xt, xrf) + Math.max(xt, xrf)) / 2, ground + 14, "AIM-OFF DISTANCE (AOD) " + fmt(Math.abs(bomb.aod), 0) + " ft", "HORIZONTAL", "middle", "var(--green)");
+      label((xo + xf) / 2, ground + 73, "AIM-OFF RANGE (AOR) " + fmt(prof.aimOffRange / FT_PER_NM, 3) + " NM", "TRACK POINT → AIM-OFF POINT · HORIZONTAL", "middle", "var(--amber)");
+      label(xf, ground - 13, "AIM-OFF POINT", "", "middle", "var(--blue)");
+    } else {
+      label((xr + xt) / 2, yr - 18, "LEVEL FLIGHT", "BOMB FREE FALL", "middle", "var(--blue)");
+    }
+    label(right - 4, 28, "ROLL-IN RANGE " + fmt(prof.totalGround / FT_PER_NM, 3) + " NM · LEAD " + fmt(prof.offsetLead, 1) + "°", "ROLL-IN " + fmt(prof.effectiveRollInRadius / FT_PER_NM, 3) + " NM / " + fmt(prof.roll.time, 2) + " s", "end", "var(--muted)");
+  }
+
+  function render() {
+    var error = document.getElementById("error");
+    try {
+      var p = resolvePatternInputs(params());
+      var safety = limits(p);
+      var calculationReleaseMsl = Math.max(p.releaseMsl, safety.rnltMsl);
+      var calculationReleaseAgl = calculationReleaseMsl - p.targetElevation;
+      var calculationP = Object.assign({}, p, { releaseAgl: calculationReleaseAgl });
+      var releaseTas = casToTas(p.releaseSpeed, calculationReleaseMsl);
+      var bomb = bombTrajectory(calculationP, releaseTas);
+      var wheel = solveWheel(p, bomb, safety);
+      p = wheel.p;
+      var prof = wheel.prof;
+      setValue("rollHeading", wheel.headingChange.toFixed(2));
+      var state = p.releaseMsl < safety.rnltMsl
+        ? { label: "AUTO · RNLT 기준 적용", cls: "safe" }
+        : releaseState(p.releaseMsl, safety);
+
+      if (prof.levelDelivery) setValue("initialAltitude", prof.initialMsl.toFixed(0));
+      else if (solveMode === "height") setValue("trackingTime", prof.trackingTime.toFixed(2));
+      else setValue("initialAltitude", prof.initialMsl.toFixed(0));
+
+      setText("solve-mode", prof.levelDelivery ? "LEVEL / FREE FALL" : (solveMode === "height" ? "Initial 고도 기준" : "Tracking Time 기준"));
+      var status = document.getElementById("result-status");
+      status.textContent = state.label;
+      status.className = "status " + state.cls;
+
+      setText("i-minalt-reference", fmt(safety.minAltMsl, 0));
+      setText("i-rnlt-bomb-reference", fmt(safety.rnltMsl, 0));
+      setText("i-rnlt-reference", fmt(safety.rnltMsl, 0));
+      setText("i-roll-radius-time", fmt(prof.effectiveRollInRadius / FT_PER_NM, 3) + " NM / " + fmt(prof.roll.time, 2) + " s");
+      setText("i-roll-loss", fmt(prof.roll.altitudeLoss, 0));
+      setText("i-roll-ground", fmt(prof.turnGroundComponent / FT_PER_NM, 3));
+      setText("i-roll-lead", fmt(prof.offsetLead, 1) + "°");
+
+      setText("w-sequence", wheel.sequence.join(" → "));
+      setText("w-range", fmt(wheel.wheelRadius / FT_PER_NM, 3) + " NM");
+      setText("w-slant", fmt(wheel.wheelSlant / FT_PER_NM, 3) + " NM");
+      setText("w-bank-g", fmt(wheel.wheelBank, 1) + "° / " + fmt(wheel.wheelG, 2) + " G");
+      setText("w-rate", fmt(wheel.wheelRate, 2) + "°/s");
+      setText("w-heading-change", fmt(wheel.headingChange, 2) + "° RIGHT");
+      setText("w-intercept", fmt(wheel.interceptAngle, 2) + "° beyond 90°");
+      setText("w-start-heading", headingText(wheel.startHeading));
+      setText("w-start-radial", headingText(wheel.startRadial) + " FROM Target");
+      setText("w-orbit-time", fmt(wheel.orbitTime, 1) + " sec");
+      setText("w-interval", fmt(wheel.attackInterval, 1) + " sec");
+      setText("w-spacing", fmt(wheel.aircraftSpacing / FT_PER_NM, 2) + " NM arc");
+      setText("w-residual", fmt(Math.abs(wheel.closure), 2) + " ft");
+      var wheelStatus = document.getElementById("wheel-status");
+      wheelStatus.textContent = "RIGHT WHEEL · VALID";
+      wheelStatus.className = "status safe";
+
+      var fragments = fragmentData(p);
+      var initialCas = tasToCas(prof.initialTas, prof.initialMsl);
+      var initialMach = prof.initialTas / atmosphere(prof.initialMsl).soundKt;
+      var rollInImpactTime = prof.roll.time + prof.trackingTime + bomb.tof;
+      var rnltApplied = prof.releaseMsl > p.releaseMsl ? " · RNLT 적용" : "";
+
+      setText("r-profile-title", zDiagramTitle(p));
+      setText("r-bomb", p.weapon.name + " / " + p.weapon.id);
+      setText("r-drag-index", fmt(p.weapon.drag, 3));
+      setText("r-ballistic-model", bomb.modelId + " · " + bomb.modelVersion);
+      setText("r-fragment-data", fmt(fragments.range, 0) + " ft / " + fmt(fragments.altitude, 0) + " ft / " + fmt(fragments.time, 1) + " sec");
+      setText("r-bomb-rnlt", fmt(safety.rnltMsl, 0) + " ft MSL");
+      setText("r-bomb-minalt", fmt(safety.minAltMsl, 0) + " ft MSL");
+      setText("r-safety-rule", "MINALT = Target MSL + Fragment Maximum Altitude × 120% / RNLT = 기존 기준 유지 @ " + fmt(p.releaseSpeed + p.rnltSpeedMargin, 0) + " KCAS / Escape " + fmt(p.escapeG, 1) + " G / Recovery 조작 지연시간 " + fmt(p.maneuverTime, 1) + " sec / " + p.weapon.safety);
+
+      setText("r-target", fmt(p.targetElevation, 0) + " ft MSL");
+      setText("r-initial-altitude", fmt(prof.initialMsl, 0) + " ft MSL");
+      setText("r-initial-speed", fmt(initialCas, 1) + " KCAS / " + fmt(prof.initialTas, 1) + " KTAS / M " + fmt(initialMach, 2));
+      setText("r-rollin-range", fmt(prof.totalGround / FT_PER_NM, 3) + " NM Horizontal / " + fmt(prof.initialSlant / FT_PER_NM, 3) + " NM Slant");
+      setText("r-ground-range", fmt(prof.mapGround / FT_PER_NM, 3) + " NM Horizontal");
+      setText("r-aod", bomb.aod === null ? "N/A · LEVEL" : fmt(Math.abs(bomb.aod), 0) + " ft / " + fmt(Math.abs(bomb.aod) / FT_PER_NM, 3) + " NM Horizontal");
+      setText("r-roll-radius", fmt(prof.effectiveRollInRadius, 0) + " ft / " + fmt(prof.effectiveRollInRadius / FT_PER_NM, 3) + " NM");
+
+      setText("r-roll-turn", fmt(p.rollHeading, 1) + "°");
+      setText("r-dive", fmt(p.diveAngle, 1) + "°");
+      setText("r-aor", prof.aimOffRange === null ? "N/A · LEVEL" : fmt(prof.aimOffRange, 0) + " ft / " + fmt(prof.aimOffRange / FT_PER_NM, 3) + " NM Horizontal");
+      setText("r-roll-bank-g", fmt(p.rollBank, 1) + "° / " + fmt(p.rollG, 1) + " G");
+      setText("r-track-altitude", fmt(prof.trackMsl, 0) + " ft MSL");
+      setText("r-tracking-time", fmt(prof.trackingTime, 2) + " sec");
+      setText("r-release-altitude", fmt(prof.releaseMsl, 0) + " ft MSL" + rnltApplied);
+      setText("r-profile-rnlt", fmt(safety.rnltMsl, 0) + " ft MSL");
+      setText("r-profile-minalt", fmt(safety.minAltMsl, 0) + " ft MSL");
+
+      setText("r-bomb-tof", fmt(bomb.tof, 2) + " sec · Release → Impact");
+      setText("r-rollin-impact-time", fmt(rollInImpactTime, 2) + " sec · Roll-in Start → Impact");
+
+      currentZFilename = Math.round(p.diveAngle) + "deg_" + deliveryProfileName(p) + "_CCIP_Z_Diagram_WHEEL_REV0.4_R_20260825.png";
+      drawZDiagram(p, bomb, prof, safety);
+      drawGeometry(p, bomb, prof, safety);
+      drawWheel(p, prof, wheel);
+      error.textContent = "";
+      error.classList.remove("show");
+    } catch (err) {
+      error.textContent = err && err.message ? err.message : String(err);
+      error.classList.add("show");
+      var wheelStatus = document.getElementById("wheel-status");
+      wheelStatus.textContent = "GEOMETRY ERROR";
+      wheelStatus.className = "status invalid";
+    }
+  }
+
+  var weaponSelect = first("weapon");
+  weaponSelect.innerHTML = weapons.map(function (w) {
+    return '<option value="' + w.id + '">' + w.name + "</option>";
+  }).join("");
+
+  var startupDefaults = {
+    weapon: "M82",
+    targetElevation: "31",
+    releaseSpeed: "450",
+    escapeG: "4",
+    rnltSpeedMargin: "50",
+    maneuverTime: "2",
+    windDirection: "0",
+    windSpeed: "0",
+    diveAngle: "45",
+    initialSpeed: "350",
+    initialUnit: "CAS",
+    initialAltitude: "16000",
+    releaseAltitude: "6800",
+    rollHeading: "90",
+    rollBank: "113",
+    rollG: "4"
+  };
+
+  var wheelStartupDefaults = {
+    attackHeading: "90",
+    aircraftCount: "4"
+  };
+
+  function applyStartupDefaults() {
+    Object.keys(startupDefaults).forEach(function (key) {
+      setValue(key, startupDefaults[key]);
+    });
+    Object.keys(wheelStartupDefaults).forEach(function (key) {
+      var node = root.querySelector('[data-wheel-key="' + key + '"]');
+      if (node) node.value = wheelStartupDefaults[key];
+    });
+    solveMode = "height";
+    bankLinked = true;
+  }
+
+  Array.prototype.slice.call(root.querySelectorAll("input")).forEach(function (node) {
+    node.setAttribute("autocomplete", "off");
+  });
+  applyStartupDefaults();
+
+  root.addEventListener("input", function (event) {
+    var key = event.target && event.target.getAttribute("data-key");
+    var wheelKey = event.target && event.target.getAttribute("data-wheel-key");
+    if (!key && !wheelKey) return;
+    if (key === "initialAltitude") solveMode = "height";
+    if (key === "trackingTime") solveMode = "time";
+    if (key === "diveAngle") {
+      syncValue("diveAngle", event.target);
+      bankLinked = true;
+    }
+    if (key === "rollBank") bankLinked = false;
+    render();
+  });
+  root.addEventListener("change", function (event) {
+    if (!event.target || (!event.target.getAttribute("data-key") && !event.target.getAttribute("data-wheel-key"))) return;
+    render();
+  });
+  document.getElementById("capture-z").addEventListener("click", function () {
+    saveSvgAsPng(document.getElementById("z-svg"), currentZFilename);
+  });
+
+  render();
+  window.addEventListener("pageshow", function () {
+    applyStartupDefaults();
+    render();
+  });
+}());
+</script>
+</body>
+</html>
